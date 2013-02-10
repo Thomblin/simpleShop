@@ -93,6 +93,7 @@ if ( isset($_POST['collectionByTheCustomer']) ) {
     $porto = 0;
 }
 
+$price += $porto;
 $result['price'] = number_format($price, 2, ',', '.') . ' '.CURRENCY;
 $result['porto'] = number_format($porto, 2, ',', '.') . ' '.CURRENCY;
 

@@ -23,9 +23,8 @@ comment: <?php echo $comment ?>
 
 <?php if (isset($selected_items)): ?>
 <?php foreach ($selected_items as $item): ?>
-    <?php echo $item['count'] ?> x <?php echo $item['name'] ?> (<?php echo $item['bundle'] ?>): <?php echo number_format($item['price'], 2, ',', '.') . ' ' . CURRENCY ?>
-
-    <?php endforeach; ?>
+<?php echo $item['count'] ?> x <?php echo $item['name'] ?> (<?php echo $item['bundle'] ?>): <?php echo number_format($item['price'], 2, ',', '.') . ' ' . CURRENCY . PHP_EOL ?>
+<?php endforeach; ?>
 <?php endif; ?>
 
 <b>porto</b>: <?php echo $porto ?>
