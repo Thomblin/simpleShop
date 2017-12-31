@@ -2,6 +2,10 @@
 
 if (!function_exists('json_encode'))
 {
+    /**
+     * @param bool|array $a
+     * @return string
+     */
     function json_encode($a=false)
     {
         if (is_null($a)) return 'null';
@@ -51,6 +55,8 @@ $config = new Config();
 $db = new Db($config);
 $items = new Items($db);
 
+Translation::init($config);
+
 $shopItems = $items->getItems();
 
 $result = array();
@@ -63,7 +69,7 @@ foreach ($config->allowedTextfields as $name => $required) {
     if (!empty($_POST[$name])) {
         $mail->add($name, $_POST[$name]);
     } elseif (Config::REQUIRED == $required) {
-        $error['req'] = 'You need to fill in all the required fields!';
+        $error['req'] = t('error.fill_required');
     }
 }
 $selected_items = array();
@@ -132,7 +138,7 @@ if (!isset($_GET['price_only'])) {
     }
 }
 
-function mail_utf8($to, $from_user, $from_email, $subject = '(No subject)', $message = '')
+function mail_utf8($to, $from_user, $from_email, $subject = '', $message = '')
 {
     $from_user = "=?UTF-8?B?" . base64_encode($from_user) . "?=";
     $subject = "=?UTF-8?B?" . base64_encode($subject) . "?=";
@@ -147,12 +153,12 @@ function mail_utf8($to, $from_user, $from_email, $subject = '(No subject)', $mes
 if (isset($_GET['mail']) && !isset($result['error'])) {
 
     if (!$items->orderItem($orders)) {
-        $result['error'] = 'Could not proceed. No items left';
+        $result['error'] = t('error.out_of_stock');
     } else {
         $text = nl2br($result['mail']);
 
-        mail_utf8(Config::MAIL_ADDRESS, Config::MAIL_USER, Config::MAIL_ADDRESS, Config::MAIL_SUBJECT, $text);
-        mail_utf8($_POST['email'], Config::MAIL_USER, Config::MAIL_ADDRESS, Config::MAIL_SUBJECT, $text);
+        mail_utf8(Config::MAIL_ADDRESS, Config::MAIL_USER, Config::MAIL_ADDRESS, t('mail.subject'), $text);
+        mail_utf8($_POST['email'], Config::MAIL_USER, Config::MAIL_ADDRESS, t('mail.subject'), $text);
     };
 }
 

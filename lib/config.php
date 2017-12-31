@@ -23,6 +23,8 @@ class Config
     public $mysqlUser = 'user';
     public $mysqlPassword = 'user';
     public $mysqlDatabase = 'shop';
+
+    public $language = 'de';
 }
 
 

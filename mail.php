@@ -1,23 +1,23 @@
-New Order
+<?php echo t('mail.new_order') ?>
 
 <?php if (isset($name)): ?>
-name: <?php echo $name ?>
+<?php echo t('name') ?>: <?php echo $name ?>
 
 <?php endif; ?>
 <?php if (isset($email)): ?>
-email: <?php echo $email ?>
+<?php echo t('email') ?>: <?php echo $email ?>
 
 <?php endif; ?>
 <?php if (isset($street)): ?>
-street: <?php echo $street ?>
+<?php echo t('street') ?>: <?php echo $street ?>
 
 <?php endif; ?>
 <?php if (isset($zipcode_location)): ?>
-postcode / city: <?php echo $zipcode_location ?>
+<?php echo t('zip_city') ?>: <?php echo $zipcode_location ?>
 
 <?php endif; ?>
 <?php if (isset($comment)): ?>
-comment: <?php echo $comment ?>
+<?php echo t('comment') ?>: <?php echo $comment ?>
 
 <?php endif; ?>
 
@@ -27,12 +27,12 @@ comment: <?php echo $comment ?>
 <?php endforeach; ?>
 <?php endif; ?>
 
-<b>porto</b>: <?php echo $porto ?>
+<b><?php echo t('porto') ?></b>: <?php echo $porto ?>
 <?php if ( isset($collectionByTheCustomer) ): ?>
-<b> (collection by the customer)</b>
+<b> <?php echo t('form.will_collect') ?></b>
 <?php endif; ?>
 
 <?php if (isset($total)): ?>
-<b>total</b>: <?php echo $total ?>
+<b><?php echo t('total') ?></b>: <?php echo $total ?>
 
 <?php endif; ?>

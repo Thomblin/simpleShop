@@ -4,11 +4,14 @@ include('autoload.php');
 $config = new Config();
 $db = new Db($config);
 $items = new Items($db);
+
+Translation::init($config);
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>title</title>
+    <title><?php echo t('site.title') ?></title>
     <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
     <script src="http://code.jquery.com/jquery-1.4.2.min.js"></script>
     <script type="text/javascript">
@@ -113,23 +116,23 @@ $items = new Items($db);
 </head>
 <body>
 <form id="ajax_form">
-    <div align="center"><a href="../index.php"><img src="" height="162" alt="title"/></a>
+    <div align="center"><a href="../index.php"><img src="" height="162" alt="<?php echo t('site.title') ?>"/></a>
     </div>
     <br>
 
     <div class="main" id="main">
-        <div class="intro"><img src="" align="left"><strong>welcome</strong>
+        <div class="intro"><img src="" align="left"><strong><?php echo t('site.welcome') ?></strong>
         </div>
         <div class="item">
-            <span class="head">your contact details</span><br/>
+            <span class="head"><?php echo t('site.contact') ?></span><br/>
 
-            <label>name*:<br/><input type="text" name="name"/></label>
+            <label><?php echo t('name') ?>:<br/><input type="text" name="name"/></label>
             <br/>
-            <label>email*:<br/><input type="text" name="email"/></label>
+            <label><?php echo t('email') ?>*:<br/><input type="text" name="email"/></label>
             <br/>
-            <label>street*:<br/><input type="text" name="street"/></label>
+            <label><?php echo t('street') ?>*:<br/><input type="text" name="street"/></label>
             <br/>
-            <label>zipcode / cities*:<br/><input type="text" name="zipcode_location"/></label>
+            <label><?php echo t('zip_city') ?>*:<br/><input type="text" name="zipcode_location"/></label>
         </div>
         <?php foreach ($items->getItems() as $item): ?>
         <div class="item">
@@ -144,7 +147,7 @@ $items = new Items($db);
                 <label><?php echo $bundle['name'] ?>:<br/>
                     <select name="<?php echo $item['item_id'] . '[' . $bundle['bundle_id'] . ']' ?>" class="price">
                         <?php for ($i = $bundle['min_count']; $i <= min($bundle['max_count'], $bundle['inventory']); ++$i): ?>
-                        <option value="<?php echo $i ?>"<?php echo $selected ?>><?php echo $i ?> times
+                        <option value="<?php echo $i ?>"<?php echo $selected ?>><?php echo $i ?> <?php echo t('times') ?>
                             (<?php echo number_format($i * $bundle['price'], 2, ',', '.') . ' ' . Config::CURRENCY ?> )
                         </option>
                         <?php $selected = '' ?>
@@ -154,7 +157,7 @@ $items = new Items($db);
                 <br/>
                 <?php endforeach; ?>
                 <br/>
-                porto (min. <?php echo number_format($item['min_porto'], 2, ',', '.') . ' ' . Config::CURRENCY ?> )
+                <?php echo t('porto') ?> (<?php echo t('min') ?> <?php echo number_format($item['min_porto'], 2, ',', '.') . ' ' . Config::CURRENCY ?> )
             </div>
 
             <?php if (!empty($item['picture'])): ?>
@@ -171,20 +174,20 @@ $items = new Items($db);
         </div>
         <?php endforeach; ?>
         <div class="item">
-            <span class="head">comments?</span><br/>
+            <span class="head"><?php echo t('form.comments') ?></span><br/>
 
             <textarea type="text" name="comment"/></textarea>
             <br/>
-            <input type="checkbox" name="collectionByTheCustomer" class="price"/> collection by the customer (no porto)
+            <input type="checkbox" name="collectionByTheCustomer" class="price"/> <?php echo t('form.will_collect_no_porto') ?>
         </div>
         <div class="item">
-            <span class="head">total</span><br/>
+            <span class="head"><?php echo t('total') ?></span><br/>
 
-            porto: <span id="porto">0 <?php echo Config::CURRENCY; ?></span>
-            total: <span id="total">0 <?php echo Config::CURRENCY; ?></span>
+            <?php echo t('porto') ?>: <span id="porto">0 <?php echo Config::CURRENCY; ?></span>
+            <?php echo t('sum') ?>: <span id="total">0 <?php echo Config::CURRENCY; ?></span>
             <br/>
             <br/>
-            <a href="javascript:;" onclick="preview();">preview</a>
+            <a href="javascript:;" onclick="preview();"><?php echo t('preview') ?></a>
             <br/>
         </div>
     </div>
@@ -193,22 +196,23 @@ $items = new Items($db);
 
         <div class="item">
             <div>
-                <a href="javascript:;" onclick="back();">back</a>
+                <a href="javascript:;" onclick="back();"><?php echo t('back') ?></a>
 
-                <a href="javascript:;" onclick="send();" id="order" style="margin-left: 50px;">order</a>
+                <a href="javascript:;" onclick="send();" id="order" style="margin-left: 50px;"><?php echo t('order') ?></a>
             </div>
             <div id="order_hint" style="padding-top: 5px;">
-                Change your selection in order to proceed
+                <?php echo t('change_selection') ?>
             </div>
         </div>
     </div>
     <div class="main" id="confirm" style="display:none">
         <div class="item">
-            Thank you for your order. You will receive an email soon.
+            <?php echo t('form.success_message') ?>
+
         </div>
     </div>
     <div class="footer">
-        <a href="" target="_top">hints / imprint</a> &middot; developed by <a href="http://sebastian-detert.de">Seeb</a> &middot; design by Wozilla
+        <a href="" target="_top"><?php echo t('site.hints_imprint') ?></a> &middot; <?php echo t('form.developed_by') ?> <a href="http://sebastian-detert.de">Seeb</a> &middot; <?php echo t('form.designed_by') ?> Wozilla
     </div>
 </form>
 </body>
