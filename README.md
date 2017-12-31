@@ -11,3 +11,11 @@
 - email to customer and provider is send, if someone confirms an order
 - current price and porto is displayed on bottom, after each (de)selection of an item
 - translations available (currently de, en)
+
+## Install
+
+- Create a mysql-Database
+- Execute sql statements in migrate.sql
+- Add items and bundles into mysql tables
+- Change lib/config.php to fit your needs
+- Change translations/*.php to fit your needs
