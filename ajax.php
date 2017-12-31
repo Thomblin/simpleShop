@@ -46,8 +46,12 @@ if (!function_exists('json_encode'))
     }
 }
 
-include('config.php');
-include('template.php');
+include('autoload.php');
+$config = new Config();
+$db = new Db($config);
+$items = new Items($db);
+
+$shopItems = $items->getItems();
 
 $result = array();
 $error = array();
@@ -55,20 +59,21 @@ $price = 0;
 
 $mail = new Template();
 
-foreach ($allowed_textfields as $name => $required) {
+foreach ($config->allowedTextfields as $name => $required) {
     if (!empty($_POST[$name])) {
         $mail->add($name, $_POST[$name]);
-    } elseif (REQUIRED == $required) {
+    } elseif (Config::REQUIRED == $required) {
         $error['req'] = 'You need to fill in all the required fields!';
     }
 }
 $selected_items = array();
 $porto = 0;
-foreach ($items as $item) {
-    if (isset($_POST[$item['id']])) {
+
+foreach ($shopItems as $item) {
+    if (isset($_POST[$item['item_id']])) {
         foreach ($item['bundles'] as $bundle) {
-            if (isset($_POST[$item['id']][$bundle['subid']])) {
-                $count = (int)$_POST[$item['id']][$bundle['subid']];
+            if (isset($_POST[$item['item_id']][$bundle['bundle_id']])) {
+                $count = (int)$_POST[$item['item_id']][$bundle['bundle_id']];
                 $count = max($count, $bundle['min_count']);
                 $count = min($count, $bundle['max_count']);
 
@@ -94,8 +99,8 @@ if ( isset($_POST['collectionByTheCustomer']) ) {
 }
 
 $price += $porto;
-$result['price'] = number_format($price, 2, ',', '.') . ' '.CURRENCY;
-$result['porto'] = number_format($porto, 2, ',', '.') . ' '.CURRENCY;
+$result['price'] = number_format($price, 2, ',', '.') . ' '.Config::CURRENCY;
+$result['porto'] = number_format($porto, 2, ',', '.') . ' '.Config::CURRENCY;
 
 if (!isset($_GET['price_only'])) {
     $mail->add('porto', $result['porto']);
@@ -127,10 +132,8 @@ function mail_utf8($to, $from_user, $from_email, $subject = '(No subject)', $mes
 if (isset($_GET['mail']) && !isset($result['error'])) {
     $text = nl2br($result['mail']);
 
-    mail_utf8(MAIL_ADDRESS, MAIL_USER, MAIL_ADDRESS, MAIL_SUBJECT, $text);
-    mail_utf8($_POST['email'], MAIL_USER, MAIL_ADDRESS, MAIL_SUBJECT, $text);
+    mail_utf8(Config::MAIL_ADDRESS, Config::MAIL_USER, Config::MAIL_ADDRESS, Config::MAIL_SUBJECT, $text);
+    mail_utf8($_POST['email'], Config::MAIL_USER, Config::MAIL_ADDRESS, Config::MAIL_SUBJECT, $text);
 }
 
 echo json_encode($result);
-
-?>

@@ -1,0 +1,21 @@
+version: '2'
+services:
+  shop:
+    build: ./docker/php
+    volumes:
+      - ./:/var/www/html/
+    ports:
+      - "11180:80"
+
+  shop_mysql:
+    image: mysql:5.5
+    environment:
+        - MYSQL_ROOT_PASSWORD=root
+        - MYSQL_DATABASE=shop
+        - MYSQL_USER=user
+        - MYSQL_PASSWORD=user
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  mysql_data:

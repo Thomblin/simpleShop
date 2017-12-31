@@ -1,5 +1,9 @@
 <?php
-include('config.php');
+include('autoload.php');
+
+$config = new Config();
+$db = new Db($config);
+$items = new Items($db);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -50,7 +54,7 @@ include('config.php');
     </script>
     <style type="text/css">
         body {
-            background-color: #000;
+            background-color: #fff;
             background-image: url();
             background-repeat: repeat-y;
             font-family: georgia, times new roman, times, serif;
@@ -119,7 +123,7 @@ include('config.php');
             <br/>
             <label>zipcode / cities*:<br/><input type="text" name="zipcode_location"/></label>
         </div>
-        <?php foreach ($items as $item): ?>
+        <?php foreach ($items->getItems() as $item): ?>
         <div class="item">
             <div>
                 <br/>
@@ -130,10 +134,10 @@ include('config.php');
                 <?php foreach ($item['bundles'] as $bundle): ?>
                 <?php $selected = ' selected="selected"' ?>
                 <label><?php echo $bundle['name'] ?>:<br/>
-                    <select name="<?php echo $item['id'] . '[' . $bundle['subid'] . ']' ?>" class="price">
+                    <select name="<?php echo $item['item_id'] . '[' . $bundle['bundle_id'] . ']' ?>" class="price">
                         <?php for ($i = $bundle['min_count']; $i <= $bundle['max_count']; ++$i): ?>
                         <option value="<?php echo $i ?>"<?php echo $selected ?>><?php echo $i ?> times
-                            (<?php echo number_format($i * $bundle['price'], 2, ',', '.') . ' ' . CURRENCY ?> )
+                            (<?php echo number_format($i * $bundle['price'], 2, ',', '.') . ' ' . Config::CURRENCY ?> )
                         </option>
                         <?php $selected = '' ?>
                         <?php endfor; ?>
@@ -142,7 +146,7 @@ include('config.php');
                 <br/>
                 <?php endforeach; ?>
                 <br/>
-                porto (min. <?php echo number_format($item['min_porto'], 2, ',', '.') . ' ' . CURRENCY ?> )
+                porto (min. <?php echo number_format($item['min_porto'], 2, ',', '.') . ' ' . Config::CURRENCY ?> )
             </div>
 
             <?php if (!empty($item['picture'])): ?>
@@ -168,8 +172,8 @@ include('config.php');
         <div class="item">
             <span class="head">total</span><br/>
 
-            porto: <span id="porto">0 <?php echo CURRENCY; ?></span>
-            total: <span id="total">0 <?php echo CURRENCY; ?></span>
+            porto: <span id="porto">0 <?php echo Config::CURRENCY; ?></span>
+            total: <span id="total">0 <?php echo Config::CURRENCY; ?></span>
             <br/>
             <br/>
             <a href="javascript:;" onclick="preview();">preview</a>
@@ -193,7 +197,7 @@ include('config.php');
         </div>
     </div>
     <div class="footer">
-        <a href="" target="_top">hints / imprint</a> &middot; programming by <a href="http://sebastian-detert.de">Seeb</a> &middot; design by Wozilla
+        <a href="" target="_top">hints / imprint</a> &middot; developed by <a href="http://sebastian-detert.de">Seeb</a> &middot; design by Wozilla
     </div>
 </form>
 </body>
