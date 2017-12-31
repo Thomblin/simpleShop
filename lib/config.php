@@ -7,7 +7,6 @@ class Config
 
     const MAIL_ADDRESS = ''; // your email address
     const MAIL_USER = ''; // name to be shown in email
-    const MAIL_SUBJECT = ''; // email subject
 
     const CURRENCY = '€';
 
