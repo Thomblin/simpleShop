@@ -23,7 +23,7 @@ comment: <?php echo $comment ?>
 
 <?php if (isset($selected_items)): ?>
 <?php foreach ($selected_items as $item): ?>
-<?php echo $item['count'] ?> x <?php echo $item['name'] ?> (<?php echo $item['bundle'] ?>): <?php echo number_format($item['price'], 2, ',', '.') . ' ' . Config::CURRENCY . PHP_EOL ?>
+<?php echo $item['amount'] ?> x <?php echo $item['name'] ?> (<?php echo $item['bundle'] ?>): <?php echo number_format($item['price'], 2, ',', '.') . ' ' . Config::CURRENCY . ($item['out_of_stock'] ? ' <b style="color:red">out of stock</b>' : '') . PHP_EOL ?>
 <?php endforeach; ?>
 <?php endif; ?>
 

@@ -22,6 +22,14 @@ $items = new Items($db);
                     $('#mail_text').html('<pre>' + response.mail + '</pre>');
                     $('#main').hide();
                     $('#mail').show();
+
+                    if(response.order) {
+                        $('#order_hint').hide();
+                        $('#order').show();
+                    } else {
+                        $('#order').hide();
+                        $('#order_hint').show();
+                    }
                 }
             }, 'json');
         }
@@ -34,7 +42,7 @@ $items = new Items($db);
         function send() {
             $.post('ajax.php?mail=1', $('#ajax_form').serialize(), function (response) {
                 if (response.error) {
-                    alert("failed to send mail!");
+                    alert(response.error);
                 }
                 else {
                     $('#mail').hide();
@@ -61,7 +69,7 @@ $items = new Items($db);
         }
 
         div.main {
-            width: 500px;
+            width: 600px;
             margin-left: 200px;
             margin-top: 75px;
             margin-bottom: 75px;
@@ -135,7 +143,7 @@ $items = new Items($db);
                 <?php $selected = ' selected="selected"' ?>
                 <label><?php echo $bundle['name'] ?>:<br/>
                     <select name="<?php echo $item['item_id'] . '[' . $bundle['bundle_id'] . ']' ?>" class="price">
-                        <?php for ($i = $bundle['min_count']; $i <= $bundle['max_count']; ++$i): ?>
+                        <?php for ($i = $bundle['min_count']; $i <= min($bundle['max_count'], $bundle['inventory']); ++$i): ?>
                         <option value="<?php echo $i ?>"<?php echo $selected ?>><?php echo $i ?> times
                             (<?php echo number_format($i * $bundle['price'], 2, ',', '.') . ' ' . Config::CURRENCY ?> )
                         </option>
@@ -187,7 +195,10 @@ $items = new Items($db);
             <div>
                 <a href="javascript:;" onclick="back();">back</a>
 
-                <a href="javascript:;" onclick="send();" style="margin-left: 50px;">order</a>
+                <a href="javascript:;" onclick="send();" id="order" style="margin-left: 50px;">order</a>
+            </div>
+            <div id="order_hint" style="padding-top: 5px;">
+                Change your selection in order to proceed
             </div>
         </div>
     </div>

@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS `bundles` (
     `price` DECIMAL(10, 2) DEFAULT 0 COMMENT "price per item",
     `min_count` INT DEFAULT 0 COMMENT "min amount to buy",
     `max_count` INT DEFAULT 1  COMMENT "max amount to buy",
+    `inventory` INT DEFAULT 0  COMMENT "items left in stock",
     PRIMARY KEY (`bundle_id`),
     KEY (`item_id`),
     CONSTRAINT `fk_item_id` FOREIGN KEY `fk_item_id` (`item_id`) REFERENCES `items` (`item_id`) ON DELETE RESTRICT ON UPDATE CASCADE

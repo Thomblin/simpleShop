@@ -25,6 +25,11 @@ class Db
         $this->db->close();
     }
 
+    /**
+     * @param string $query
+     * @param array $params
+     * @return array
+     */
     public function fetchAll($query, $params = [])
     {
         $result = [];
@@ -47,5 +52,13 @@ class Db
         }
 
         return $result;
+    }
+
+    /**
+     * @param string $query
+     */
+    public function exec($query)
+    {
+        $this->db->query($query);
     }
 }

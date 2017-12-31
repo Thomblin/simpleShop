@@ -48,4 +48,44 @@ class Items
     {
         return $this->db->fetchAll("SELECT * FROM bundles");
     }
+
+    /**
+     * @param array $orders
+     *
+     * @return bool
+     */
+    public function orderItem(array $orders)
+    {
+        $this->db->exec("LOCK TABLE bundles WRITE");
+
+        $bundles = [];
+        foreach ($this->loadBundles() as $bundle) {
+            $bundles[$bundle['bundle_id']] = $bundle['inventory'];
+        }
+
+        foreach ($orders as $order) {
+            $amount = (int)$order['amount'];
+            $bundleId = (int)$order['bundle_id'];
+
+            if ($amount > $bundles[$bundleId]) {
+                $this->db->exec("UNLOCK TABLE");
+                return false;
+            }
+        }
+
+        foreach ($orders as $order) {
+            $amount = (int)$order['amount'];
+            $bundleId = (int)$order['bundle_id'];
+
+            $this->db->exec("
+                UPDATE bundles
+                SET
+                  inventory=inventory-$amount
+                WHERE bundle_id=$bundleId"
+            );
+        }
+
+        $this->db->exec("UNLOCK TABLE");
+        return true;
+    }
 }
