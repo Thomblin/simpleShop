@@ -33,5 +33,5 @@ return array(
     'form.success_message' => 'Vielen Dank für deine Bestellung. Du erhälst in wenigen Minuten eine Kopie per Mail und in Kürze eine Bestätigungsmail.',
 
     'error.fill_required' => 'Alle Pflichtfelder müssen ausgefüllt werden!',
-    'error.out_of_stock' => 'Die Bestellung konnte nicht ausgeführt werden.',
+    'error.out_of_stock' => 'Die Bestellung konnte nicht ausgeführt werden. Du musst deine Auswahl anpassen, um die Bestellung auszuführen.',
 );
