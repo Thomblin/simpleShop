@@ -24,6 +24,7 @@ return array(
     'basket' => 'Dein Warenkorb',
     'basket_total' => 'Warenkorbsumme',
     'add_to_basket' => 'In den Warenkorb',
+    'added_to_basket' => 'Hinzugefügt!',
     'remove' => 'Entfernen',
     'preview' => 'Vorschau',
     'back' => 'Zurück',

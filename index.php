@@ -180,6 +180,11 @@ Translation::init($config);
             $('#basket_items').html(basketHtml);
             $('#basket_display').show();
 
+            // Highlight basket briefly
+            $('#basket_display').stop().css('background-color', '#e8f5e9').animate({
+                backgroundColor: '#ddd'
+            }, 800);
+
             // Generate hidden form fields
             generateBasketFormFields();
         }
@@ -249,7 +254,19 @@ Translation::init($config);
                 }
 
                 addToBasket(itemId, itemName, bundleId, bundleName, quantity, price);
+
+                // Show success message
+                showSuccessMessage(itemId);
             });
+
+            function showSuccessMessage(itemId) {
+                var successMsg = $('#success_' + itemId);
+                successMsg.fadeIn(200);
+
+                setTimeout(function() {
+                    successMsg.fadeOut(1000);
+                }, 1000);
+            }
 
             // Handle remove from basket
             $("body").delegate(".remove-basket-item", "click", function() {
@@ -390,6 +407,8 @@ Translation::init($config);
                     <span id="price_display_<?php echo $item['item_id'] ?>" style="font-weight: bold;"></span>
                     <br/><br/>
                     <button type="button" class="add-to-basket-btn" data-item-id="<?php echo $item['item_id'] ?>"><?php echo t('add_to_basket') ?></button>
+                    <br/>
+                    <span class="basket-success-message" id="success_<?php echo $item['item_id'] ?>" style="display:none; margin-left: 10px; color: #008800; font-weight: bold;">✓ <?php echo t('added_to_basket') ?></span>
                 </div>
 
                 <br/>

@@ -24,6 +24,7 @@ return array(
     'basket' => 'Your Basket',
     'basket_total' => 'Basket Total',
     'add_to_basket' => 'Add to Basket',
+    'added_to_basket' => 'Added!',
     'remove' => 'Remove',
     'preview' => 'preview',
     'back' => 'back',
