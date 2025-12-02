@@ -412,7 +412,9 @@ Translation::init($config);
                 </div>
 
                 <br/>
+                <?php if ($item['min_porto'] > 0): ?>
                 <?php echo t('porto') ?> (<?php echo t('min') ?> <?php echo number_format($item['min_porto'], 2, ',', '.') . ' ' . Config::CURRENCY ?> )
+                <?php endif; ?>
             </div>
 
             <?php if (!empty($item['picture'])): ?>
@@ -428,17 +430,31 @@ Translation::init($config);
 
         </div>
         <?php endforeach; ?>
+        <?php
+        // Check if any item has porto > 0
+        $hasPorto = false;
+        foreach ($items->getItems() as $item) {
+            if ($item['min_porto'] > 0) {
+                $hasPorto = true;
+                break;
+            }
+        }
+        ?>
         <div class="item">
             <span class="head"><?php echo t('form.comments') ?></span><br/>
 
             <textarea type="text" name="comment"/></textarea>
             <br/>
+            <?php if ($hasPorto): ?>
             <input type="checkbox" name="collectionByTheCustomer" class="price"/> <?php echo t('form.will_collect_no_porto') ?>
+            <?php endif; ?>
         </div>
         <div class="item">
             <span class="head"><?php echo t('total') ?></span><br/>
 
+            <?php if ($hasPorto): ?>
             <?php echo t('porto') ?>: <span id="porto">0 <?php echo Config::CURRENCY; ?></span>
+            <?php endif; ?>
             <?php echo t('sum') ?>: <span id="total">0 <?php echo Config::CURRENCY; ?></span>
             <br/>
             <br/>
