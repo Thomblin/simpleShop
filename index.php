@@ -55,11 +55,89 @@ Translation::init($config);
             }, 'json');
         }
 
-        $("body").delegate(".price", "change", function () {
-            $.post('ajax.php?price_only=1', $('#ajax_form').serialize(), function (response) {
-                $('#porto').html(response.porto);
-                $('#total').html(response.price);
-            }, 'json');
+        // Handle option selection
+        function handleOptionChange() {
+            var itemId = $(this).attr('data-item-id');
+            var selectedOption = $(this).find('option:selected');
+
+            // Only show quantity selector if an option is actually selected
+            if (selectedOption.val() === '') {
+                $('#quantity_' + itemId).hide();
+                return;
+            }
+
+            var bundleId = selectedOption.attr('data-bundle-id');
+            var price = parseFloat(selectedOption.attr('data-price'));
+            var minCount = parseInt(selectedOption.attr('data-min-count'));
+            var maxCount = parseInt(selectedOption.attr('data-max-count'));
+            var inventory = parseInt(selectedOption.attr('data-inventory'));
+
+            // Update quantity selector
+            var quantitySelect = $('#quantity_' + itemId + ' select.quantity-select');
+            var maxQuantity = Math.min(maxCount, inventory);
+
+            // Clear and rebuild options
+            quantitySelect.empty();
+            quantitySelect.append('<option value="0">0 <?php echo t('times') ?></option>');
+
+            for (var i = minCount; i <= maxQuantity; i++) {
+                var optionPrice = (i * price).toFixed(2).replace('.', ',');
+                var selectedAttr = (i === minCount) ? ' selected="selected"' : '';
+                quantitySelect.append(
+                    '<option value="' + i + '"' + selectedAttr + '>' + i + ' <?php echo t('times') ?> (' +
+                    optionPrice + ' <?php echo Config::CURRENCY ?> )</option>'
+                );
+            }
+
+            // Update the name attribute to match the bundle
+            quantitySelect.attr('name', itemId + '[' + bundleId + ']');
+
+            // Show the quantity selector
+            $('#quantity_' + itemId).show();
+
+            // Update price display
+            updatePriceDisplay(itemId);
+
+            // Trigger price calculation
+            quantitySelect.trigger('change');
+        }
+
+        function updatePriceDisplay(itemId) {
+            var quantitySelect = $('#quantity_' + itemId + ' select.quantity-select');
+            var quantity = parseInt(quantitySelect.val());
+
+            if (quantity > 0) {
+                var optionText = quantitySelect.find('option:selected').text();
+                $('#price_display_' + itemId).html(optionText);
+            } else {
+                $('#price_display_' + itemId).html('');
+            }
+        }
+
+        $(document).ready(function() {
+            // Set up event handlers first
+            $("body").delegate(".option-select", "change", handleOptionChange);
+
+            $("body").delegate(".quantity-select", "change", function () {
+                var itemId = $(this).attr('data-item-id');
+                updatePriceDisplay(itemId);
+            });
+
+            $("body").delegate(".price", "change", function () {
+                $.post('ajax.php?price_only=1', $('#ajax_form').serialize(), function (response) {
+                    $('#porto').html(response.porto);
+                    $('#total').html(response.price);
+                }, 'json');
+            });
+
+            // Now auto-select first option for each item
+            $('.option-select').each(function() {
+                var firstOption = $(this).find('option[value!=""]').first();
+                if (firstOption.length) {
+                    $(this).val(firstOption.val());
+                    handleOptionChange.call(this);
+                }
+            });
         });
 
     </script>
@@ -135,27 +213,46 @@ Translation::init($config);
             <label><?php echo t('zip_city') ?>*:<br/><input type="text" name="zipcode_location"/></label>
         </div>
         <?php foreach ($items->getItems() as $item): ?>
-        <div class="item">
+        <div class="item" data-item-id="<?php echo $item['item_id'] ?>">
             <div>
                 <br/>
                 <span class="head"><?php echo $item['name'] ?></span>
             </div>
 
             <div style="float:left">
-                <?php foreach ($item['bundles'] as $bundle): ?>
-                <?php $selected = ' selected="selected"' ?>
-                <label><?php echo $bundle['name'] ?>:<br/>
-                    <select name="<?php echo $item['item_id'] . '[' . $bundle['bundle_id'] . ']' ?>" class="price">
-                        <?php for ($i = $bundle['min_count']; $i <= min($bundle['max_count'], $bundle['inventory']); ++$i): ?>
-                        <option value="<?php echo $i ?>"<?php echo $selected ?>><?php echo $i ?> <?php echo t('times') ?>
-                            (<?php echo number_format($i * $bundle['price'], 2, ',', '.') . ' ' . Config::CURRENCY ?> )
+                <?php foreach ($item['option_groups'] as $optionGroup): ?>
+                <label><?php echo $optionGroup['group_name'] ?>:<br/>
+                    <select name="item_<?php echo $item['item_id'] ?>_option_<?php echo $optionGroup['group_id'] ?>"
+                            class="option-select"
+                            data-item-id="<?php echo $item['item_id'] ?>"
+                            data-group-id="<?php echo $optionGroup['group_id'] ?>">
+                        <option value="">-- <?php echo t('select') ?> <?php echo $optionGroup['group_name'] ?> --</option>
+                        <?php foreach ($optionGroup['options'] as $option): ?>
+                        <option value="<?php echo $option['option_id'] ?>"
+                                data-bundle-id="<?php echo $option['bundle_id'] ?>"
+                                data-price="<?php echo $option['price'] ?>"
+                                data-min-count="<?php echo $option['min_count'] ?>"
+                                data-max-count="<?php echo $option['max_count'] ?>"
+                                data-inventory="<?php echo $option['inventory'] ?>">
+                            <?php echo !empty($option['option_description']) ? $option['option_description'] : $option['option_name'] ?>
                         </option>
-                        <?php $selected = '' ?>
-                        <?php endfor; ?>
+                        <?php endforeach; ?>
                     </select>
                 </label>
                 <br/>
                 <?php endforeach; ?>
+
+                <!-- Quantity selector (shown after option selection) -->
+                <div id="quantity_<?php echo $item['item_id'] ?>" style="display:none; margin-top: 10px;">
+                    <label><?php echo t('quantity') ?>:<br/>
+                        <select name="quantity_placeholder" class="price quantity-select" data-item-id="<?php echo $item['item_id'] ?>">
+                            <option value="0">0 <?php echo t('times') ?></option>
+                        </select>
+                    </label>
+                    <br/>
+                    <span id="price_display_<?php echo $item['item_id'] ?>" style="font-weight: bold;"></span>
+                </div>
+
                 <br/>
                 <?php echo t('porto') ?> (<?php echo t('min') ?> <?php echo number_format($item['min_porto'], 2, ',', '.') . ' ' . Config::CURRENCY ?> )
             </div>

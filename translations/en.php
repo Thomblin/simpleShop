@@ -19,6 +19,8 @@ return array(
     'min' => 'min.',
 
     'times' => 'times',
+    'select' => 'Select',
+    'quantity' => 'Quantity',
     'preview' => 'preview',
     'back' => 'back',
     'order' => 'order',

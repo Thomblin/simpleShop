@@ -19,6 +19,8 @@ return array(
     'min' => 'min.',
 
     'times' => 'mal',
+    'select' => 'Wähle',
+    'quantity' => 'Anzahl',
     'preview' => 'Vorschau',
     'back' => 'Zurück',
     'order' => 'Bestellen',
