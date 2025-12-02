@@ -19,6 +19,13 @@ return array(
     'min' => 'min.',
 
     'times' => 'times',
+    'select' => 'Select',
+    'quantity' => 'Quantity',
+    'basket' => 'Your Basket',
+    'basket_total' => 'Basket Total',
+    'add_to_basket' => 'Add to Basket',
+    'added_to_basket' => 'Added!',
+    'remove' => 'Remove',
     'preview' => 'preview',
     'back' => 'back',
     'order' => 'order',
