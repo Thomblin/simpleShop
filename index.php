@@ -114,6 +114,110 @@ Translation::init($config);
             }
         }
 
+        // Basket management
+        var basket = [];
+        var basketCounter = 0;
+
+        function addToBasket(itemId, itemName, bundleId, bundleName, quantity, price) {
+            // Check if this bundle already exists in the basket
+            var existingItem = null;
+            for (var i = 0; i < basket.length; i++) {
+                if (basket[i].itemId === itemId && basket[i].bundleId === bundleId) {
+                    existingItem = basket[i];
+                    break;
+                }
+            }
+
+            if (existingItem) {
+                // Update existing item quantity
+                existingItem.quantity += quantity;
+                existingItem.totalPrice = existingItem.quantity * existingItem.price;
+            } else {
+                // Add new item to basket
+                var basketItem = {
+                    id: basketCounter++,
+                    itemId: itemId,
+                    itemName: itemName,
+                    bundleId: bundleId,
+                    bundleName: bundleName,
+                    quantity: quantity,
+                    price: price,
+                    totalPrice: quantity * price
+                };
+                basket.push(basketItem);
+            }
+
+            updateBasketDisplay();
+            updateBasketTotal();
+        }
+
+        function removeFromBasket(basketItemId) {
+            basket = basket.filter(function(item) {
+                return item.id !== basketItemId;
+            });
+            updateBasketDisplay();
+            updateBasketTotal();
+        }
+
+        function updateBasketDisplay() {
+            var basketHtml = '';
+
+            if (basket.length === 0) {
+                $('#basket_display').hide();
+                return;
+            }
+
+            basket.forEach(function(item) {
+                var itemTotal = item.totalPrice.toFixed(2).replace('.', ',');
+                basketHtml += '<div style="padding: 5px; border-bottom: 1px solid #ccc;">';
+                basketHtml += '<strong>' + item.itemName + '</strong> - ' + item.bundleName;
+                basketHtml += '<br/>' + item.quantity + ' <?php echo t('times') ?> × ' + item.price.toFixed(2).replace('.', ',') + ' <?php echo Config::CURRENCY ?>';
+                basketHtml += ' = <strong>' + itemTotal + ' <?php echo Config::CURRENCY ?></strong>';
+                basketHtml += ' <a href="javascript:void(0);" class="remove-basket-item" data-basket-id="' + item.id + '" style="margin-left: 10px; color: #880000;">[<?php echo t('remove') ?>]</a>';
+                basketHtml += '</div>';
+            });
+
+            $('#basket_items').html(basketHtml);
+            $('#basket_display').show();
+
+            // Generate hidden form fields
+            generateBasketFormFields();
+        }
+
+        function updateBasketTotal() {
+            var total = 0;
+            basket.forEach(function(item) {
+                total += item.totalPrice;
+            });
+            $('#basket_total').html(total.toFixed(2).replace('.', ',') + ' <?php echo Config::CURRENCY ?>');
+
+            // Trigger price recalculation
+            calculateTotalWithPorto();
+        }
+
+        function generateBasketFormFields() {
+            // Remove old basket fields
+            $('.basket-field').remove();
+
+            // Add new fields for each basket item
+            basket.forEach(function(item) {
+                var fieldName = item.itemId + '[' + item.bundleId + ']';
+                $('<input>').attr({
+                    type: 'hidden',
+                    name: fieldName,
+                    value: item.quantity,
+                    class: 'basket-field price'
+                }).appendTo('#ajax_form');
+            });
+        }
+
+        function calculateTotalWithPorto() {
+            $.post('ajax.php?price_only=1', $('#ajax_form').serialize(), function (response) {
+                $('#porto').html(response.porto);
+                $('#total').html(response.price);
+            }, 'json');
+        }
+
         $(document).ready(function() {
             // Set up event handlers first
             $("body").delegate(".option-select", "change", handleOptionChange);
@@ -123,11 +227,34 @@ Translation::init($config);
                 updatePriceDisplay(itemId);
             });
 
-            $("body").delegate(".price", "change", function () {
-                $.post('ajax.php?price_only=1', $('#ajax_form').serialize(), function (response) {
-                    $('#porto').html(response.porto);
-                    $('#total').html(response.price);
-                }, 'json');
+            $("body").delegate(".price", "change", calculateTotalWithPorto);
+
+            // Handle add to basket button
+            $("body").delegate(".add-to-basket-btn", "click", function() {
+                var itemId = $(this).attr('data-item-id');
+                var itemName = $('.item[data-item-id="' + itemId + '"] .head').text();
+
+                // Get selected option
+                var selectedOption = $('.item[data-item-id="' + itemId + '"] .option-select option:selected');
+                var bundleId = selectedOption.attr('data-bundle-id');
+                var bundleName = selectedOption.text();
+                var price = parseFloat(selectedOption.attr('data-price'));
+
+                // Get quantity
+                var quantity = parseInt($('#quantity_' + itemId + ' .quantity-select').val());
+
+                if (!bundleId || quantity <= 0) {
+                    alert('<?php echo t('error.fill_required') ?>');
+                    return;
+                }
+
+                addToBasket(itemId, itemName, bundleId, bundleName, quantity, price);
+            });
+
+            // Handle remove from basket
+            $("body").delegate(".remove-basket-item", "click", function() {
+                var basketId = parseInt($(this).attr('data-basket-id'));
+                removeFromBasket(basketId);
             });
 
             // Now auto-select first option for each item
@@ -212,6 +339,16 @@ Translation::init($config);
             <br/>
             <label><?php echo t('zip_city') ?>*:<br/><input type="text" name="zipcode_location"/></label>
         </div>
+
+        <!-- Basket Display -->
+        <div class="item" id="basket_display" style="display:none;">
+            <span class="head"><?php echo t('basket') ?></span><br/>
+            <div id="basket_items"></div>
+            <div style="margin-top: 10px;">
+                <strong><?php echo t('basket_total') ?>:</strong> <span id="basket_total">0 <?php echo Config::CURRENCY; ?></span>
+            </div>
+        </div>
+
         <?php foreach ($items->getItems() as $item): ?>
         <div class="item" data-item-id="<?php echo $item['item_id'] ?>">
             <div>
@@ -245,12 +382,14 @@ Translation::init($config);
                 <!-- Quantity selector (shown after option selection) -->
                 <div id="quantity_<?php echo $item['item_id'] ?>" style="display:none; margin-top: 10px;">
                     <label><?php echo t('quantity') ?>:<br/>
-                        <select name="quantity_placeholder" class="price quantity-select" data-item-id="<?php echo $item['item_id'] ?>">
+                        <select name="quantity_placeholder" class="quantity-select" data-item-id="<?php echo $item['item_id'] ?>">
                             <option value="0">0 <?php echo t('times') ?></option>
                         </select>
                     </label>
                     <br/>
                     <span id="price_display_<?php echo $item['item_id'] ?>" style="font-weight: bold;"></span>
+                    <br/><br/>
+                    <button type="button" class="add-to-basket-btn" data-item-id="<?php echo $item['item_id'] ?>"><?php echo t('add_to_basket') ?></button>
                 </div>
 
                 <br/>
