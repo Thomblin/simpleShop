@@ -9,18 +9,11 @@ spl_autoload_register(function ($className) {
         __DIR__ . '/controllers/'
     ];
 
-    // Try each directory
+    // Filename matches class name (PascalCase)
     foreach ($directories as $directory) {
         $file = $directory . $className . '.php';
         if (file_exists($file)) {
             include $file;
-            return;
-        }
-
-        // Also try lowercase (for backward compatibility with old naming)
-        $fileLower = $directory . strtolower($className) . '.php';
-        if (file_exists($fileLower)) {
-            include $fileLower;
             return;
         }
     }

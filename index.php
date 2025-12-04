@@ -5,7 +5,10 @@ $config = new Config();
 $db = new Db($config);
 $items = new Items($db);
 
-Translation::init($config);
+// Initialize translation singleton for t() function
+$translationLoader = new TranslationLoader();
+$translation = new Translation($translationLoader, $config->getLanguage());
+Translation::setInstance($translation);
 
 ?>
 <!DOCTYPE html>

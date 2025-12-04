@@ -49,40 +49,28 @@ class Translation implements TranslationInterface
     }
 
     /**
-     * Initialize the singleton instance (for backward compatibility)
+     * Set the singleton instance (for global t() function)
      *
-     * @param ConfigInterface $config
-     * @deprecated Use constructor with dependency injection instead
+     * @param Translation $instance
+     * @return void
      */
-    public static function init(ConfigInterface $config)
+    public static function setInstance(Translation $instance)
     {
-        self::$instance = self::createFromConfig($config);
+        self::$instance = $instance;
     }
 
     /**
-     * Get the singleton instance
+     * Get the singleton instance (public for t() function)
      *
      * @return Translation
      * @throws RuntimeException if not initialized
      */
-    private static function getInstance()
+    public static function getInstance()
     {
         if (self::$instance === null) {
-            throw new RuntimeException('Translation not initialized. Call Translation::init() first.');
+            throw new RuntimeException('Translation not initialized. Call Translation::setInstance() first.');
         }
         return self::$instance;
-    }
-
-    /**
-     * Static translate method for backward compatibility
-     *
-     * @param string $key
-     * @return string
-     * @deprecated Use instance method instead
-     */
-    public static function translateStatic($key)
-    {
-        return self::getInstance()->translate($key);
     }
 }
 
@@ -95,6 +83,6 @@ class Translation implements TranslationInterface
 if (!function_exists('t')) {
     function t($key)
     {
-        return Translation::translateStatic($key);
+        return Translation::getInstance()->translate($key);
     }
 }

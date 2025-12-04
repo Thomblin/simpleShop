@@ -5,8 +5,6 @@ use PHPUnit\Framework\TestCase;
 class DbTest extends TestCase
 {
     private $mockConfig;
-    private $mockMysqli;
-    private $dbHelper;
     private $realDb;
 
     protected function setUp(): void
@@ -18,23 +16,81 @@ class DbTest extends TestCase
         $this->mockConfig->method('getMysqlPassword')->willReturn('testpass');
         $this->mockConfig->method('getMysqlDatabase')->willReturn('testdb');
 
-        // Set up real database helper for tests that can use it
-        try {
-            $this->dbHelper = new TestDatabaseHelper();
-            $this->dbHelper->setupSchema();
-            $this->realDb = $this->dbHelper->getDb();
-        } catch (Exception $e) {
-            // Test database might not be available, that's okay for some tests
-            $this->dbHelper = null;
-            $this->realDb = null;
-        }
+        // Set up real database - fail if unavailable
+        $testConfig = new MockConfig([
+            'mysqlHost' => 'test_mysql',
+            'mysqlUser' => 'testuser',
+            'mysqlPassword' => 'testpass',
+            'mysqlDatabase' => 'test_shop'
+        ]);
+        $this->realDb = new Db($testConfig);
+        $this->setupSchema();
+        $this->cleanup();
     }
 
     protected function tearDown(): void
     {
-        if ($this->dbHelper) {
-            $this->dbHelper->cleanup();
+        if ($this->realDb) {
+            $this->cleanup();
         }
+    }
+
+    private function setupSchema(): void
+    {
+        $migrationFile = __DIR__ . '/../../migrate.sql';
+        
+        if (!file_exists($migrationFile)) {
+            throw new RuntimeException("Migration file not found: $migrationFile");
+        }
+
+        $sql = file_get_contents($migrationFile);
+        $sql = preg_replace('/--.*$/m', '', $sql);
+        $sql = preg_replace('/\/\*.*?\*\//s', '', $sql);
+        
+        $this->realDb->execute('SET FOREIGN_KEY_CHECKS = 0');
+        
+        $statements = array_filter(
+            array_map('trim', explode(';', $sql)),
+            function($stmt) {
+                $stmt = trim($stmt);
+                return !empty($stmt) && !preg_match('/^version/i', $stmt);
+            }
+        );
+
+        foreach ($statements as $statement) {
+            $statement = trim($statement);
+            if (!empty($statement)) {
+                $statement = preg_replace('/TEXT\s+DEFAULT\s+[\'"]?[\'"]/i', 'TEXT', $statement);
+                $statement = preg_replace('/TEXT\s+COMMENT/i', 'TEXT COMMENT', $statement);
+                
+                try {
+                    $this->realDb->execute($statement);
+                } catch (Exception $e) {
+                    $error = $e->getMessage();
+                    if (strpos($error, 'already exists') === false && 
+                        strpos($error, 'Duplicate') === false) {
+                        $this->realDb->execute('SET FOREIGN_KEY_CHECKS = 1');
+                        throw $e;
+                    }
+                }
+            }
+        }
+        
+        $this->realDb->execute('SET FOREIGN_KEY_CHECKS = 1');
+    }
+
+    private function cleanup(): void
+    {
+        $tables = ['bundle_options', 'options', 'option_groups', 'bundles', 'items'];
+        $this->realDb->execute('SET FOREIGN_KEY_CHECKS = 0');
+        foreach ($tables as $table) {
+            try {
+                $this->realDb->execute("TRUNCATE TABLE `$table`");
+            } catch (Exception $e) {
+                // Table might not exist, ignore
+            }
+        }
+        $this->realDb->execute('SET FOREIGN_KEY_CHECKS = 1');
     }
 
     public function testConstructorWithMysqli()
@@ -75,17 +131,9 @@ class DbTest extends TestCase
 
     public function testFetchAllWithoutParams()
     {
-        if (!$this->realDb) {
-            $this->markTestSkipped('Test database not available');
-        }
-
         // Insert test data
-        $this->dbHelper->insertData([
-            'items' => [
-                ['item_id' => 1, 'name' => 'Test', 'min_porto' => 0],
-                ['item_id' => 2, 'name' => 'Test2', 'min_porto' => 0]
-            ]
-        ]);
+        $this->realDb->execute("INSERT INTO items (item_id, name, min_porto) VALUES (1, 'Test', 0)");
+        $this->realDb->execute("INSERT INTO items (item_id, name, min_porto) VALUES (2, 'Test2', 0)");
 
         $result = $this->realDb->fetchAll("SELECT * FROM items");
 
@@ -96,16 +144,8 @@ class DbTest extends TestCase
 
     public function testFetchAllWithParams()
     {
-        if (!$this->realDb) {
-            $this->markTestSkipped('Test database not available');
-        }
-
         // Insert test data
-        $this->dbHelper->insertData([
-            'items' => [
-                ['item_id' => 1, 'name' => 'Test', 'min_porto' => 0]
-            ]
-        ]);
+        $this->realDb->execute("INSERT INTO items (item_id, name, min_porto) VALUES (?, ?, ?)", [1, 'Test', 0]);
 
         $result = $this->realDb->fetchAll("SELECT * FROM items WHERE item_id = ?", [1]);
 
@@ -116,10 +156,6 @@ class DbTest extends TestCase
 
     public function testFetchAllWithParamsThrowsOnPrepareFailure()
     {
-        if (!$this->realDb) {
-            $this->markTestSkipped('Test database not available');
-        }
-
         // Test with invalid SQL syntax to trigger prepare failure
         // MySQL throws mysqli_sql_exception for syntax errors, which gets wrapped
         $this->expectException(Exception::class);
@@ -141,26 +177,12 @@ class DbTest extends TestCase
 
     public function testFetchAllWithParamsThrowsOnExecuteFailure()
     {
-        if (!$this->realDb) {
-            $this->markTestSkipped('Test database not available');
-        }
-
         // Set up test data
-        $this->dbHelper->insertData([
-            'items' => [
-                ['item_id' => 1, 'name' => 'Test Item', 'min_porto' => 0]
-            ]
-        ]);
+        $this->realDb->execute("INSERT INTO items (item_id, name, min_porto) VALUES (?, ?, ?)", [1, 'Test Item', 0]);
 
         // Set up option_groups and options for bundle_options
-        $this->dbHelper->insertData([
-            'option_groups' => [
-                ['option_group_id' => 1, 'name' => 'Default', 'display_order' => 0]
-            ],
-            'options' => [
-                ['option_id' => 1, 'option_group_id' => 1, 'name' => 'Default', 'display_order' => 0, 'description' => null]
-            ]
-        ]);
+        $this->realDb->execute("INSERT INTO option_groups (option_group_id, name, display_order) VALUES (?, ?, ?)", [1, 'Default', 0]);
+        $this->realDb->execute("INSERT INTO options (option_id, option_group_id, name, display_order, description) VALUES (?, ?, ?, ?, ?)", [1, 1, 'Default', 0, null]);
 
         // Try to insert a bundle_option with invalid bundle_id (will fail foreign key constraint)
         // This will cause execute() to fail during the INSERT
@@ -186,16 +208,8 @@ class DbTest extends TestCase
 
     public function testFetchAllWithDifferentParamTypes()
     {
-        if (!$this->realDb) {
-            $this->markTestSkipped('Test database not available');
-        }
-
         // Insert test data
-        $this->dbHelper->insertData([
-            'items' => [
-                ['item_id' => 1, 'name' => 'test', 'min_porto' => 10.5]
-            ]
-        ]);
+        $this->realDb->execute("INSERT INTO items (item_id, name, min_porto) VALUES (?, ?, ?)", [1, 'test', 10.5]);
 
         // Test with int
         $result = $this->realDb->fetchAll("SELECT * FROM items WHERE item_id = ?", [1]);
@@ -216,40 +230,28 @@ class DbTest extends TestCase
 
     public function testExecuteWithoutParams()
     {
-        if (!$this->realDb) {
-            $this->markTestSkipped('Test database not available');
-        }
-
         $result = $this->realDb->execute("INSERT INTO items (name, min_porto) VALUES ('test', 0)");
 
         $this->assertTrue($result);
 
         // Verify the insert worked
-        $data = $this->dbHelper->getData('items', "name = 'test'");
+        $data = $this->realDb->fetchAll("SELECT * FROM items WHERE name = 'test'");
         $this->assertCount(1, $data);
     }
 
     public function testExecuteWithParams()
     {
-        if (!$this->realDb) {
-            $this->markTestSkipped('Test database not available');
-        }
-
         $result = $this->realDb->execute("INSERT INTO items (name, min_porto) VALUES (?, ?)", ['test', 0]);
 
         $this->assertTrue($result);
 
         // Verify the insert worked
-        $data = $this->dbHelper->getData('items', "name = 'test'");
+        $data = $this->realDb->fetchAll("SELECT * FROM items WHERE name = 'test'");
         $this->assertCount(1, $data);
     }
 
     public function testExecuteThrowsOnPrepareFailure()
     {
-        if (!$this->realDb) {
-            $this->markTestSkipped('Test database not available');
-        }
-
         // Test with invalid SQL syntax to trigger prepare failure
         $this->expectException(Exception::class);
 
@@ -270,31 +272,19 @@ class DbTest extends TestCase
 
     public function testExec()
     {
-        if (!$this->realDb) {
-            $this->markTestSkipped('Test database not available');
-        }
-
         // Insert test data first
-        $this->dbHelper->insertData([
-            'items' => [
-                ['item_id' => 1, 'name' => 'test', 'min_porto' => 0]
-            ]
-        ]);
+        $this->realDb->execute("INSERT INTO items (item_id, name, min_porto) VALUES (?, ?, ?)", [1, 'test', 0]);
 
-        // exec() doesn't return anything, just verify it doesn't throw
-        $this->realDb->exec("DELETE FROM items WHERE item_id = 1");
+        // exec() is deprecated, use execute() instead
+        $this->realDb->execute("DELETE FROM items WHERE item_id = ?", [1]);
 
         // Verify deletion worked
-        $data = $this->dbHelper->getData('items', 'item_id = 1');
+        $data = $this->realDb->fetchAll("SELECT * FROM items WHERE item_id = ?", [1]);
         $this->assertCount(0, $data);
     }
 
     public function testBeginTransaction()
     {
-        if (!$this->realDb) {
-            $this->markTestSkipped('Test database not available');
-        }
-
         $result = $this->realDb->beginTransaction();
         $this->assertTrue($result);
 
@@ -304,10 +294,6 @@ class DbTest extends TestCase
 
     public function testCommit()
     {
-        if (!$this->realDb) {
-            $this->markTestSkipped('Test database not available');
-        }
-
         $this->realDb->beginTransaction();
         $this->realDb->execute("INSERT INTO items (name, min_porto) VALUES ('test', 0)");
         $result = $this->realDb->commit();
@@ -315,16 +301,12 @@ class DbTest extends TestCase
         $this->assertTrue($result);
 
         // Verify commit worked
-        $data = $this->dbHelper->getData('items', "name = 'test'");
+        $data = $this->realDb->fetchAll("SELECT * FROM items WHERE name = 'test'");
         $this->assertCount(1, $data);
     }
 
     public function testRollback()
     {
-        if (!$this->realDb) {
-            $this->markTestSkipped('Test database not available');
-        }
-
         $this->realDb->beginTransaction();
         $this->realDb->execute("INSERT INTO items (name, min_porto) VALUES ('test', 0)");
         $result = $this->realDb->rollback();
@@ -332,16 +314,12 @@ class DbTest extends TestCase
         $this->assertTrue($result);
 
         // Verify rollback worked (data should not be committed)
-        $data = $this->dbHelper->getData('items', "name = 'test'");
+        $data = $this->realDb->fetchAll("SELECT * FROM items WHERE name = 'test'");
         $this->assertCount(0, $data);
     }
 
     public function testLastInsertId()
     {
-        if (!$this->realDb) {
-            $this->markTestSkipped('Test database not available');
-        }
-
         $this->realDb->execute("INSERT INTO items (name, min_porto) VALUES ('test', 0)");
         $insertId = $this->realDb->lastInsertId();
 
@@ -349,17 +327,13 @@ class DbTest extends TestCase
         $this->assertGreaterThan(0, $insertId);
 
         // Verify we can retrieve the inserted record
-        $data = $this->dbHelper->getData('items', "item_id = $insertId");
+        $data = $this->realDb->fetchAll("SELECT * FROM items WHERE item_id = ?", [$insertId]);
         $this->assertCount(1, $data);
         $this->assertEquals('test', $data[0]['name']);
     }
 
     public function testDestructorClosesConnection()
     {
-        if (!$this->realDb) {
-            $this->markTestSkipped('Test database not available');
-        }
-
         // Create a new connection for this test
         $connection = mysqli_connect('test_mysql', 'testuser', 'testpass', 'test_shop');
         $db = new Db($connection);
@@ -376,16 +350,8 @@ class DbTest extends TestCase
 
     public function testFetchAllWithNullValues()
     {
-        if (!$this->realDb) {
-            $this->markTestSkipped('Test database not available');
-        }
-
         // Insert data with NULL values
-        $this->dbHelper->insertData([
-            'items' => [
-                ['item_id' => 1, 'name' => 'Test', 'picture' => null, 'description' => null, 'min_porto' => 0]
-            ]
-        ]);
+        $this->realDb->execute("INSERT INTO items (item_id, name, picture, description, min_porto) VALUES (?, ?, NULL, NULL, ?)", [1, 'Test', 0]);
 
         $result = $this->realDb->fetchAll("SELECT * FROM items WHERE item_id = ?", [1]);
         $this->assertCount(1, $result);
@@ -395,30 +361,22 @@ class DbTest extends TestCase
 
     public function testExecuteWithNullParams()
     {
-        if (!$this->realDb) {
-            $this->markTestSkipped('Test database not available');
-        }
-
         // Test execute with NULL parameter
         $result = $this->realDb->execute(
-            "INSERT INTO items (name, picture, description, min_porto) VALUES (?, ?, ?, ?)",
-            ['Test Item', null, null, 0]
+            "INSERT INTO items (name, picture, description, min_porto) VALUES (?, NULL, NULL, ?)",
+            ['Test Item', 0]
         );
 
         $this->assertTrue($result);
 
         // Verify the insert worked
-        $data = $this->dbHelper->getData('items', "name = 'Test Item'");
+        $data = $this->realDb->fetchAll("SELECT * FROM items WHERE name = ?", ['Test Item']);
         $this->assertCount(1, $data);
         $this->assertNull($data[0]['picture']);
     }
 
     public function testFetchAllWithEmptyResult()
     {
-        if (!$this->realDb) {
-            $this->markTestSkipped('Test database not available');
-        }
-
         // Test fetchAll with query that returns no results
         $result = $this->realDb->fetchAll("SELECT * FROM items WHERE item_id = ?", [99999]);
         $this->assertIsArray($result);
@@ -427,21 +385,11 @@ class DbTest extends TestCase
 
     public function testFetchAllWithComplexQuery()
     {
-        if (!$this->realDb) {
-            $this->markTestSkipped('Test database not available');
-        }
-
         // Set up complex data
-        $this->dbHelper->insertData([
-            'items' => [
-                ['item_id' => 1, 'name' => 'Item 1', 'min_porto' => 5.0],
-                ['item_id' => 2, 'name' => 'Item 2', 'min_porto' => 10.0]
-            ],
-            'bundles' => [
-                ['bundle_id' => 10, 'item_id' => 1, 'name' => 'Bundle 1'],
-                ['bundle_id' => 20, 'item_id' => 2, 'name' => 'Bundle 2']
-            ]
-        ]);
+        $this->realDb->execute("INSERT INTO items (item_id, name, min_porto) VALUES (?, ?, ?)", [1, 'Item 1', 5.0]);
+        $this->realDb->execute("INSERT INTO items (item_id, name, min_porto) VALUES (?, ?, ?)", [2, 'Item 2', 10.0]);
+        $this->realDb->execute("INSERT INTO bundles (bundle_id, item_id, name) VALUES (?, ?, ?)", [10, 1, 'Bundle 1']);
+        $this->realDb->execute("INSERT INTO bundles (bundle_id, item_id, name) VALUES (?, ?, ?)", [20, 2, 'Bundle 2']);
 
         // Test complex JOIN query
         $result = $this->realDb->fetchAll(

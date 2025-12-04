@@ -139,14 +139,6 @@ class Db implements DatabaseInterface
         return $success;
     }
 
-    /**
-     * @deprecated Use execute() instead
-     * @param string $query
-     */
-    public function exec($query)
-    {
-        $this->db->query($query);
-    }
 
     /**
      * @return bool
