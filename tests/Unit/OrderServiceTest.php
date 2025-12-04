@@ -577,6 +577,231 @@ class OrderServiceTest extends TestCase
         $this->assertEquals(10.0, $result->porto); // Should be max of min_porto values
     }
 
+    public function testProcessOrderWithNestedBundleOptionsMultipleOptions()
+    {
+        // Test processNestedBundleOptions with multiple bundle_option_ids
+        $this->dbHelper->insertData([
+            'items' => [
+                ['item_id' => 1, 'name' => 'Test Item', 'picture' => null, 'description' => null, 'min_porto' => 5.0]
+            ],
+            'bundles' => [
+                ['bundle_id' => 10, 'item_id' => 1, 'name' => 'Test Bundle']
+            ],
+            'option_groups' => [
+                ['option_group_id' => 1, 'name' => 'Size', 'display_order' => 0]
+            ],
+            'options' => [
+                ['option_id' => 1, 'option_group_id' => 1, 'name' => 'Small', 'display_order' => 0, 'description' => 'Small size'],
+                ['option_id' => 2, 'option_group_id' => 1, 'name' => 'Large', 'display_order' => 1, 'description' => 'Large size']
+            ],
+            'bundle_options' => [
+                ['bundle_option_id' => 100, 'bundle_id' => 10, 'option_id' => 1, 'price' => 10.0, 'min_count' => 1, 'max_count' => 10, 'inventory' => 20],
+                ['bundle_option_id' => 200, 'bundle_id' => 10, 'option_id' => 2, 'price' => 20.0, 'min_count' => 1, 'max_count' => 10, 'inventory' => 15]
+            ]
+        ]);
+
+        $shopItems = [
+            [
+                'item_id' => 1,
+                'name' => 'Test Item',
+                'min_porto' => 5.0,
+                'bundles' => [
+                    ['bundle_id' => 10, 'name' => 'Test Bundle']
+                ],
+                'option_groups' => [
+                    [
+                        'group_id' => 1,
+                        'group_name' => 'Size',
+                        'options' => [
+                            [
+                                'option_id' => 1,
+                                'option_name' => 'Small',
+                                'option_description' => 'Small size',
+                                'bundle_id' => 10,
+                                'bundle_name' => 'Test Bundle',
+                                'bundle_option_id' => 100,
+                                'price' => 10.0,
+                                'min_count' => 1,
+                                'max_count' => 10,
+                                'inventory' => 20
+                            ],
+                            [
+                                'option_id' => 2,
+                                'option_name' => 'Large',
+                                'option_description' => 'Large size',
+                                'bundle_id' => 10,
+                                'bundle_name' => 'Test Bundle',
+                                'bundle_option_id' => 200,
+                                'price' => 20.0,
+                                'min_count' => 1,
+                                'max_count' => 10,
+                                'inventory' => 15
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ];
+
+        $postData = [
+            1 => [
+                10 => [
+                    100 => 2,  // 2 of Small
+                    200 => 3   // 3 of Large
+                ]
+            ]
+        ];
+
+        $result = $this->orderService->processOrder($postData, $shopItems);
+
+        $this->assertCount(2, $result->items);
+        $this->assertEquals(100, $result->items[0]->bundleOptionId);
+        $this->assertEquals(200, $result->items[1]->bundleOptionId);
+        $this->assertEquals(2, $result->items[0]->amount);
+        $this->assertEquals(3, $result->items[1]->amount);
+    }
+
+    public function testProcessOrderWithZeroAmount()
+    {
+        // Test that zero amounts are not added to order
+        $this->dbHelper->insertData([
+            'items' => [
+                ['item_id' => 1, 'name' => 'Test Item', 'picture' => null, 'description' => null, 'min_porto' => 0]
+            ],
+            'bundles' => [
+                ['bundle_id' => 10, 'item_id' => 1, 'name' => 'Test Bundle']
+            ],
+            'option_groups' => [
+                ['option_group_id' => 1, 'name' => 'Default', 'display_order' => 0]
+            ],
+            'options' => [
+                ['option_id' => 1, 'option_group_id' => 1, 'name' => 'Default', 'display_order' => 0, 'description' => null]
+            ],
+            'bundle_options' => [
+                ['bundle_option_id' => 100, 'bundle_id' => 10, 'option_id' => 1, 'price' => 10.0, 'min_count' => 1, 'max_count' => 10, 'inventory' => 20]
+            ]
+        ]);
+
+        $shopItems = [
+            [
+                'item_id' => 1,
+                'name' => 'Test Item',
+                'min_porto' => 0,
+                'bundles' => [
+                    ['bundle_id' => 10, 'name' => 'Test Bundle']
+                ],
+                'option_groups' => []
+            ]
+        ];
+
+        $postData = [
+            1 => [10 => 0]  // Zero amount
+        ];
+
+        $result = $this->orderService->processOrder($postData, $shopItems);
+
+        // Should have 1 item because min_count is 1, so 0 gets clamped to 1
+        $this->assertCount(1, $result->items);
+        $this->assertEquals(1, $result->items[0]->amount); // Clamped to min_count
+    }
+
+    public function testValidateCustomerDataWithMultipleRequiredFields()
+    {
+        $customerData = [
+            'name' => 'John',
+            'email' => '',
+            'street' => ''
+        ];
+
+        $requiredFields = [
+            'name' => Config::REQUIRED,
+            'email' => Config::REQUIRED,
+            'street' => Config::REQUIRED
+        ];
+
+        $errors = $this->orderService->validateCustomerData($customerData, $requiredFields);
+
+        $this->assertNotEmpty($errors);
+        $this->assertArrayHasKey('req', $errors);
+    }
+
+    public function testValidateCustomerDataWithNonRequiredFields()
+    {
+        $customerData = [
+            'name' => 'John',
+            'comment' => ''  // Empty but not required
+        ];
+
+        $requiredFields = [
+            'name' => Config::REQUIRED,
+            'comment' => ''  // Not required
+        ];
+
+        $errors = $this->orderService->validateCustomerData($customerData, $requiredFields);
+
+        $this->assertEmpty($errors);
+    }
+
+    public function testProcessOrderWithEmptyShopItems()
+    {
+        $postData = [
+            'name' => 'John Doe',
+            'email' => 'john@example.com'
+        ];
+
+        $shopItems = [];
+
+        $result = $this->orderService->processOrder($postData, $shopItems);
+
+        $this->assertInstanceOf(Order::class, $result);
+        $this->assertCount(0, $result->items);
+        $this->assertEquals('John Doe', $result->customer['name']);
+    }
+
+    public function testProcessOrderWithNegativeAmount()
+    {
+        // Test that negative amounts are handled
+        $this->dbHelper->insertData([
+            'items' => [
+                ['item_id' => 1, 'name' => 'Test Item', 'picture' => null, 'description' => null, 'min_porto' => 0]
+            ],
+            'bundles' => [
+                ['bundle_id' => 10, 'item_id' => 1, 'name' => 'Test Bundle']
+            ],
+            'option_groups' => [
+                ['option_group_id' => 1, 'name' => 'Default', 'display_order' => 0]
+            ],
+            'options' => [
+                ['option_id' => 1, 'option_group_id' => 1, 'name' => 'Default', 'display_order' => 0, 'description' => null]
+            ],
+            'bundle_options' => [
+                ['bundle_option_id' => 100, 'bundle_id' => 10, 'option_id' => 1, 'price' => 10.0, 'min_count' => 1, 'max_count' => 10, 'inventory' => 20]
+            ]
+        ]);
+
+        $shopItems = [
+            [
+                'item_id' => 1,
+                'name' => 'Test Item',
+                'min_porto' => 0,
+                'bundles' => [
+                    ['bundle_id' => 10, 'name' => 'Test Bundle']
+                ],
+                'option_groups' => []
+            ]
+        ];
+
+        $postData = [
+            1 => [10 => -5]  // Negative amount
+        ];
+
+        $result = $this->orderService->processOrder($postData, $shopItems);
+
+        // Negative should be clamped to min_count (1)
+        $this->assertCount(1, $result->items);
+        $this->assertEquals(1, $result->items[0]->amount);
+    }
+
     public function testProcessOrderWithOptionDescription()
     {
         $shopItems = [

@@ -373,5 +373,88 @@ class DbTest extends TestCase
         // Connection should be closed (we can't easily test this without trying to use it)
         $this->assertTrue(true);
     }
+
+    public function testFetchAllWithNullValues()
+    {
+        if (!$this->realDb) {
+            $this->markTestSkipped('Test database not available');
+        }
+
+        // Insert data with NULL values
+        $this->dbHelper->insertData([
+            'items' => [
+                ['item_id' => 1, 'name' => 'Test', 'picture' => null, 'description' => null, 'min_porto' => 0]
+            ]
+        ]);
+
+        $result = $this->realDb->fetchAll("SELECT * FROM items WHERE item_id = ?", [1]);
+        $this->assertCount(1, $result);
+        $this->assertNull($result[0]['picture']);
+        $this->assertNull($result[0]['description']);
+    }
+
+    public function testExecuteWithNullParams()
+    {
+        if (!$this->realDb) {
+            $this->markTestSkipped('Test database not available');
+        }
+
+        // Test execute with NULL parameter
+        $result = $this->realDb->execute(
+            "INSERT INTO items (name, picture, description, min_porto) VALUES (?, ?, ?, ?)",
+            ['Test Item', null, null, 0]
+        );
+
+        $this->assertTrue($result);
+
+        // Verify the insert worked
+        $data = $this->dbHelper->getData('items', "name = 'Test Item'");
+        $this->assertCount(1, $data);
+        $this->assertNull($data[0]['picture']);
+    }
+
+    public function testFetchAllWithEmptyResult()
+    {
+        if (!$this->realDb) {
+            $this->markTestSkipped('Test database not available');
+        }
+
+        // Test fetchAll with query that returns no results
+        $result = $this->realDb->fetchAll("SELECT * FROM items WHERE item_id = ?", [99999]);
+        $this->assertIsArray($result);
+        $this->assertCount(0, $result);
+    }
+
+    public function testFetchAllWithComplexQuery()
+    {
+        if (!$this->realDb) {
+            $this->markTestSkipped('Test database not available');
+        }
+
+        // Set up complex data
+        $this->dbHelper->insertData([
+            'items' => [
+                ['item_id' => 1, 'name' => 'Item 1', 'min_porto' => 5.0],
+                ['item_id' => 2, 'name' => 'Item 2', 'min_porto' => 10.0]
+            ],
+            'bundles' => [
+                ['bundle_id' => 10, 'item_id' => 1, 'name' => 'Bundle 1'],
+                ['bundle_id' => 20, 'item_id' => 2, 'name' => 'Bundle 2']
+            ]
+        ]);
+
+        // Test complex JOIN query
+        $result = $this->realDb->fetchAll(
+            "SELECT i.item_id, i.name, b.bundle_id, b.name as bundle_name 
+             FROM items i 
+             LEFT JOIN bundles b ON i.item_id = b.item_id 
+             WHERE i.item_id = ?",
+            [1]
+        );
+
+        $this->assertIsArray($result);
+        $this->assertGreaterThan(0, count($result));
+        $this->assertEquals('Item 1', $result[0]['name']);
+    }
 }
 

@@ -376,4 +376,141 @@ class ItemsTest extends TestCase
         $this->assertArrayHasKey(100, $result[1]['option_groups']);
         $this->assertArrayHasKey(101, $result[1]['option_groups']);
     }
+
+    public function testGetBundleOptionsForBundle()
+    {
+        $this->dbHelper->insertData([
+            'items' => [
+                ['item_id' => 1, 'name' => 'Test Item', 'min_porto' => 0]
+            ],
+            'bundles' => [
+                ['bundle_id' => 10, 'item_id' => 1, 'name' => 'Test Bundle']
+            ],
+            'option_groups' => [
+                ['option_group_id' => 1, 'name' => 'Default', 'display_order' => 0]
+            ],
+            'options' => [
+                ['option_id' => 1, 'option_group_id' => 1, 'name' => 'Default', 'display_order' => 0, 'description' => null]
+            ],
+            'bundle_options' => [
+                ['bundle_option_id' => 100, 'bundle_id' => 10, 'option_id' => 1, 'price' => 25.50, 'min_count' => 1, 'max_count' => 10, 'inventory' => 50]
+            ]
+        ]);
+
+        $result = $this->items->getBundleOptionsForBundle(10);
+
+        $this->assertIsArray($result);
+        $this->assertCount(1, $result);
+        $this->assertEquals(100, $result[0]['bundle_option_id']);
+        $this->assertEquals(10, $result[0]['bundle_id']);
+        $this->assertEquals(25.50, $result[0]['price']);
+        $this->assertEquals(50, $result[0]['inventory']);
+    }
+
+    public function testGetBundleOptionsForBundleReturnsEmptyForNonExistentBundle()
+    {
+        $result = $this->items->getBundleOptionsForBundle(999);
+        $this->assertIsArray($result);
+        $this->assertCount(0, $result);
+    }
+
+    public function testGetItemsWithNoBundles()
+    {
+        // Test getItems when item has no bundles
+        $this->dbHelper->insertData([
+            'items' => [
+                ['item_id' => 1, 'name' => 'Item Without Bundles', 'min_porto' => 0]
+            ]
+        ]);
+
+        $result = $this->items->getItems();
+
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey(1, $result);
+        $this->assertEquals('Item Without Bundles', $result[1]['name']);
+        $this->assertArrayHasKey('bundles', $result[1]);
+        $this->assertIsArray($result[1]['bundles']);
+        // Bundles array should be empty
+        $this->assertCount(0, $result[1]['bundles']);
+    }
+
+    public function testGetItemsWithMultipleBundlesPerItem()
+    {
+        // Test getItems when item has multiple bundles
+        $this->dbHelper->insertData([
+            'items' => [
+                ['item_id' => 1, 'name' => 'Item with Multiple Bundles', 'min_porto' => 0]
+            ],
+            'bundles' => [
+                ['bundle_id' => 10, 'item_id' => 1, 'name' => 'Bundle 1'],
+                ['bundle_id' => 20, 'item_id' => 1, 'name' => 'Bundle 2'],
+                ['bundle_id' => 30, 'item_id' => 1, 'name' => 'Bundle 3']
+            ],
+            'option_groups' => [
+                ['option_group_id' => 1, 'name' => 'Default', 'display_order' => 0]
+            ],
+            'options' => [
+                ['option_id' => 1, 'option_group_id' => 1, 'name' => 'Default', 'display_order' => 0, 'description' => null]
+            ],
+            'bundle_options' => [
+                ['bundle_option_id' => 100, 'bundle_id' => 10, 'option_id' => 1, 'price' => 10.0, 'min_count' => 1, 'max_count' => 10, 'inventory' => 20],
+                ['bundle_option_id' => 200, 'bundle_id' => 20, 'option_id' => 1, 'price' => 20.0, 'min_count' => 1, 'max_count' => 10, 'inventory' => 15],
+                ['bundle_option_id' => 300, 'bundle_id' => 30, 'option_id' => 1, 'price' => 30.0, 'min_count' => 1, 'max_count' => 10, 'inventory' => 10]
+            ]
+        ]);
+
+        $result = $this->items->getItems();
+
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey(1, $result);
+        $this->assertArrayHasKey('bundles', $result[1]);
+        $this->assertCount(3, $result[1]['bundles']);
+    }
+
+    public function testOrderItemWithInvalidBundleOptionId()
+    {
+        // Test orderItem with invalid bundle_option_id
+        $orders = [
+            ['bundle_option_id' => 99999, 'amount' => 5]  // Non-existent bundle_option_id
+        ];
+
+        $result = $this->items->orderItem($orders);
+
+        $this->assertFalse($result);
+    }
+
+    public function testOrderItemWithZeroAmount()
+    {
+        // Test orderItem with zero amount
+        $this->dbHelper->insertData([
+            'items' => [
+                ['item_id' => 1, 'name' => 'Test Item', 'min_porto' => 0]
+            ],
+            'bundles' => [
+                ['bundle_id' => 10, 'item_id' => 1, 'name' => 'Test Bundle']
+            ],
+            'option_groups' => [
+                ['option_group_id' => 1, 'name' => 'Default', 'display_order' => 0]
+            ],
+            'options' => [
+                ['option_id' => 1, 'option_group_id' => 1, 'name' => 'Default', 'display_order' => 0, 'description' => null]
+            ],
+            'bundle_options' => [
+                ['bundle_option_id' => 100, 'bundle_id' => 10, 'option_id' => 1, 'price' => 10.0, 'min_count' => 0, 'max_count' => 10, 'inventory' => 20]
+            ]
+        ]);
+
+        $orders = [
+            ['bundle_option_id' => 100, 'amount' => 0]
+        ];
+
+        $result = $this->items->orderItem($orders);
+
+        // Zero amount should be valid if min_count is 0
+        $this->assertTrue($result);
+
+        // Inventory should remain the same
+        $bundleOption = $this->dbHelper->getData('bundle_options', 'bundle_option_id = 100')[0];
+        $this->assertEquals(20, $bundleOption['inventory']);
+    }
 }

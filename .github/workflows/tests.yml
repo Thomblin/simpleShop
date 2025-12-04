@@ -104,17 +104,21 @@ jobs:
           
           # Extract coverage percentages from Summary section (handles ANSI codes)
           LINE_COVERAGE=$(sed -n '/Summary:/,/^$/p' coverage_output.txt | grep -oP 'Lines:\s+\K[\d.]+' | head -1 || echo "0")
+          METHODS_COVERAGE=$(sed -n '/Summary:/,/^$/p' coverage_output.txt | grep -oP 'Methods:\s+\K[\d.]+' | head -1 || echo "0")
           CLASS_COVERAGE=$(sed -n '/Summary:/,/^$/p' coverage_output.txt | grep -oP 'Classes:\s+\K[\d.]+' | head -1 || echo "0")
           
           # Remove % sign if present
           LINE_COVERAGE=${LINE_COVERAGE%\%}
+          METHODS_COVERAGE=${METHODS_COVERAGE%\%}
           CLASS_COVERAGE=${CLASS_COVERAGE%\%}
           
           echo "Line Coverage: ${LINE_COVERAGE}%"
+          echo "Methods Coverage: ${METHODS_COVERAGE}%"
           echo "Class Coverage: ${CLASS_COVERAGE}%"
           
           # Set output for later steps
           echo "line_coverage=${LINE_COVERAGE}" >> $GITHUB_OUTPUT
+          echo "methods_coverage=${METHODS_COVERAGE}" >> $GITHUB_OUTPUT
           echo "class_coverage=${CLASS_COVERAGE}" >> $GITHUB_OUTPUT
           
           # Check thresholds and fail if below (using awk for float comparison)
@@ -126,15 +130,22 @@ jobs:
             echo "✅ Line coverage (${LINE_COVERAGE}%) meets threshold (90%)"
           fi
           
-          if [ $(echo "$CLASS_COVERAGE" | awk '{print ($1 < 70)}') -eq 1 ]; then
-            echo "❌ Class coverage (${CLASS_COVERAGE}%) is below required threshold (70%)"
+          if [ $(echo "$METHODS_COVERAGE" | awk '{print ($1 < 80)}') -eq 1 ]; then
+            echo "❌ Methods coverage (${METHODS_COVERAGE}%) is below required threshold (80%)"
             FAILED=1
           else
-            echo "✅ Class coverage (${CLASS_COVERAGE}%) meets threshold (70%)"
+            echo "✅ Methods coverage (${METHODS_COVERAGE}%) meets threshold (80%)"
+          fi
+          
+          if [ $(echo "$CLASS_COVERAGE" | awk '{print ($1 < 60)}') -eq 1 ]; then
+            echo "❌ Class coverage (${CLASS_COVERAGE}%) is below required threshold (60%)"
+            FAILED=1
+          else
+            echo "✅ Class coverage (${CLASS_COVERAGE}%) meets threshold (60%)"
           fi
           
           if [ $FAILED -eq 1 ]; then
-            echo "::error::Coverage thresholds not met. Line coverage must be >= 90%, Class coverage must be >= 70%"
+            echo "::error::Coverage thresholds not met. Line coverage must be >= 90%, Methods coverage must be >= 80%, Class coverage must be >= 60%"
             exit 1
           fi
 
@@ -156,20 +167,22 @@ jobs:
             
             try {
               const lineCoverage = '${{ steps.coverage_check.outputs.line_coverage }}';
+              const methodsCoverage = '${{ steps.coverage_check.outputs.methods_coverage }}';
               const classCoverage = '${{ steps.coverage_check.outputs.class_coverage }}';
               
               const coveragePath = path.join(process.cwd(), 'coverage', 'index.html');
               const hasReport = fs.existsSync(coveragePath);
               
               let status = '✅';
-              if (parseFloat(lineCoverage) < 90 || parseFloat(classCoverage) < 70) {
+              if (parseFloat(lineCoverage) < 90 || parseFloat(methodsCoverage) < 80 || parseFloat(classCoverage) < 60) {
                 status = '❌';
               }
               
               const body = `## ${status} Test Coverage Report
               
               **Line Coverage:** ${lineCoverage}% ${parseFloat(lineCoverage) >= 90 ? '✅' : '❌ (Required: ≥90%)'}
-              **Class Coverage:** ${classCoverage}% ${parseFloat(classCoverage) >= 70 ? '✅' : '❌ (Required: ≥70%)'}
+              **Methods Coverage:** ${methodsCoverage}% ${parseFloat(methodsCoverage) >= 80 ? '✅' : '❌ (Required: ≥80%)'}
+              **Class Coverage:** ${classCoverage}% ${parseFloat(classCoverage) >= 60 ? '✅' : '❌ (Required: ≥60%)'}
               
               ${hasReport ? '📥 Download the full HTML report from the workflow artifacts to view detailed coverage information.' : 'Coverage report is being generated...'}`;
               

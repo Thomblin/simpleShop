@@ -181,4 +181,125 @@ class MailServiceTest extends TestCase
         $sentEmails = MailService::getSentEmails();
         $this->assertCount(0, $sentEmails);
     }
+
+    public function testGetSentEmailsReturnsAllEmails()
+    {
+        MailService::clearSentEmails();
+        $service = new MailService();
+        
+        $service->send('test1@example.com', 'Subject 1', 'Message 1', 'from@example.com', 'From');
+        $service->send('test2@example.com', 'Subject 2', 'Message 2', 'from@example.com', 'From');
+        
+        $sentEmails = MailService::getSentEmails();
+        $this->assertCount(2, $sentEmails);
+        $this->assertEquals('test1@example.com', $sentEmails[0]['to']);
+        $this->assertEquals('test2@example.com', $sentEmails[1]['to']);
+    }
+
+    public function testClearSentEmailsRemovesAllEmails()
+    {
+        MailService::clearSentEmails();
+        $service = new MailService();
+        
+        $service->send('test@example.com', 'Subject', 'Message', 'from@example.com', 'From');
+        $this->assertCount(1, MailService::getSentEmails());
+        
+        MailService::clearSentEmails();
+        $this->assertCount(0, MailService::getSentEmails());
+    }
+
+    public function testGetLastSentEmailReturnsMostRecent()
+    {
+        MailService::clearSentEmails();
+        $service = new MailService();
+        
+        $service->send('first@example.com', 'First', 'Message 1', 'from@example.com', 'From');
+        $service->send('last@example.com', 'Last', 'Message 2', 'from@example.com', 'From');
+        
+        $lastEmail = MailService::getLastSentEmail();
+        $this->assertNotNull($lastEmail);
+        $this->assertEquals('last@example.com', $lastEmail['to']);
+        $this->assertEquals('Last', $lastEmail['subject']);
+    }
+
+    public function testGetLastSentEmailReturnsNullWhenNoEmails()
+    {
+        MailService::clearSentEmails();
+        
+        $lastEmail = MailService::getLastSentEmail();
+        $this->assertNull($lastEmail);
+    }
+
+    public function testSendToMultipleWithPartialFailure()
+    {
+        MailService::clearSentEmails();
+        $service = new MailService();
+        
+        // In test mode, all sends succeed, but we can test the logic
+        $result = $service->sendToMultiple(
+            ['test1@example.com', 'test2@example.com'],
+            'Test Subject',
+            '<p>Test message</p>',
+            'from@example.com',
+            'Test Sender'
+        );
+        
+        $this->assertTrue($result);
+        $sentEmails = MailService::getSentEmails();
+        $this->assertCount(2, $sentEmails);
+    }
+
+    public function testSendEncodesHeadersCorrectly()
+    {
+        MailService::clearSentEmails();
+        $service = new MailService();
+        
+        // Test that UTF-8 encoding is applied
+        $service->send(
+            'test@example.com',
+            'Test Subject with Ümläuts',
+            '<p>Test message</p>',
+            'from@example.com',
+            'Sender with Émojis 🎉'
+        );
+        
+        $email = MailService::getLastSentEmail();
+        $this->assertNotNull($email);
+        $this->assertEquals('Test Subject with Ümläuts', $email['subject']);
+        $this->assertEquals('Sender with Émojis 🎉', $email['fromName']);
+    }
+
+    public function testSendProductionCodePathEncoding()
+    {
+        // Test the encoding logic that would be used in production
+        // We can't test the actual mail() call, but we can test the encoding functions
+        $testSubject = 'Test Subject with Ümläuts';
+        $testFromName = 'Sender with Émojis 🎉';
+        
+        // Test the encoding that would be applied in production
+        $fromNameEncoded = "=?UTF-8?B?" . base64_encode($testFromName) . "?=";
+        $subjectEncoded = "=?UTF-8?B?" . base64_encode($testSubject) . "?=";
+        
+        // Verify encoding works correctly
+        $this->assertStringStartsWith('=?UTF-8?B?', $fromNameEncoded);
+        $this->assertStringStartsWith('=?UTF-8?B?', $subjectEncoded);
+        
+        // Verify we can decode it back
+        $decodedSubject = base64_decode(str_replace(['=?UTF-8?B?', '?='], '', $subjectEncoded));
+        $decodedFromName = base64_decode(str_replace(['=?UTF-8?B?', '?='], '', $fromNameEncoded));
+        
+        $this->assertEquals($testSubject, $decodedSubject);
+        $this->assertEquals($testFromName, $decodedFromName);
+        
+        // Test header building logic
+        $fromEmail = 'test@example.com';
+        $headers = "From: $fromNameEncoded <$fromEmail>\r\n" .
+            "MIME-Version: 1.0\r\n" .
+            "Content-type: text/html; charset=UTF-8\r\n";
+        
+        $this->assertStringContainsString($fromNameEncoded, $headers);
+        $this->assertStringContainsString($fromEmail, $headers);
+        $this->assertStringContainsString('MIME-Version: 1.0', $headers);
+        $this->assertStringContainsString('Content-type: text/html; charset=UTF-8', $headers);
+    }
 }
