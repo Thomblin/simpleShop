@@ -55,46 +55,50 @@ describe('BasketLogic', () => {
     describe('addItem', () => {
         test('should add new item to empty basket', () => {
             const BasketLogic = SimpleShop.BasketLogic;
-            const basket = BasketLogic.addItem(
+            const result = BasketLogic.addItem(
                 'item1', 'Item Name', 'bundle1', 'Bundle', 'option1', 'Option', 2, 10.50
             );
 
-            expect(basket.length).toBe(1);
-            expect(basket[0].itemId).toBe('item1');
-            expect(basket[0].quantity).toBe(2);
-            expect(basket[0].totalPrice).toBe(21.00);
+            expect(result.basket.length).toBe(1);
+            expect(result.basket[0].itemId).toBe('item1');
+            expect(result.basket[0].quantity).toBe(2);
+            expect(result.basket[0].totalPrice).toBe(21.00);
+            expect(result.wasUpdate).toBe(false);
         });
 
-        test('should update quantity when adding same item', () => {
+        test('should replace quantity when adding same item', () => {
             const BasketLogic = SimpleShop.BasketLogic;
             
             // Add item first time
             BasketLogic.addItem('item1', 'Item', 'bundle1', 'Bundle', 'option1', 'Option', 2, 10);
             
-            // Add same item again
-            const basket = BasketLogic.addItem('item1', 'Item', 'bundle1', 'Bundle', 'option1', 'Option', 3, 10);
+            // Add same item again - should replace quantity, not add
+            const result = BasketLogic.addItem('item1', 'Item', 'bundle1', 'Bundle', 'option1', 'Option', 3, 10);
 
-            expect(basket.length).toBe(1);
-            expect(basket[0].quantity).toBe(5); // 2 + 3
-            expect(basket[0].totalPrice).toBe(50.00); // 5 * 10
+            expect(result.basket.length).toBe(1);
+            expect(result.basket[0].quantity).toBe(3); // Replaced with new quantity
+            expect(result.basket[0].totalPrice).toBe(30.00); // 3 * 10
+            expect(result.wasUpdate).toBe(true);
         });
 
         test('should add separate items with different bundleOptionId', () => {
             const BasketLogic = SimpleShop.BasketLogic;
             
             BasketLogic.addItem('item1', 'Item', 'bundle1', 'Bundle', 'option1', 'Option 1', 1, 10);
-            const basket = BasketLogic.addItem('item1', 'Item', 'bundle1', 'Bundle', 'option2', 'Option 2', 1, 10);
+            const result = BasketLogic.addItem('item1', 'Item', 'bundle1', 'Bundle', 'option2', 'Option 2', 1, 10);
 
-            expect(basket.length).toBe(2);
+            expect(result.basket.length).toBe(2);
+            expect(result.wasUpdate).toBe(false);
         });
 
         test('should add separate items with same bundleId but no bundleOptionId', () => {
             const BasketLogic = SimpleShop.BasketLogic;
             
             BasketLogic.addItem('item1', 'Item', 'bundle1', 'Bundle', '', '', 1, 10);
-            const basket = BasketLogic.addItem('item2', 'Item', 'bundle2', 'Bundle', '', '', 1, 10);
+            const result = BasketLogic.addItem('item2', 'Item', 'bundle2', 'Bundle', '', '', 1, 10);
 
-            expect(basket.length).toBe(2);
+            expect(result.basket.length).toBe(2);
+            expect(result.wasUpdate).toBe(false);
         });
     });
 

@@ -96,7 +96,10 @@ if (typeof shopConfig === 'undefined') {
         translations: {
             times: 'times',
             remove: 'Remove',
-            errorFillRequired: 'Please fill all required fields'
+            errorFillRequired: 'Please fill all required fields',
+            errorSpecifyQuantity: 'Please specify quantity',
+            addedToBasket: 'Added!',
+            updatedToBasket: 'Updated!'
         }
     };
 }

@@ -146,6 +146,239 @@ describe('FormService', () => {
             // Should not call appendTo when basket is empty
             expect(mockAppendTo).not.toHaveBeenCalled();
         });
+
+        test('should save original-name for option selects when it does not exist', () => {
+            const mockAttr = jest.fn().mockReturnValue('option-name');
+            const mockData = jest.fn().mockReturnValue(null); // original-name doesn't exist
+            const mockRemoveAttr = jest.fn();
+            const mockSelect = {
+                data: mockData,
+                attr: mockAttr,
+                removeAttr: mockRemoveAttr
+            };
+            const mockEach = jest.fn((callback) => {
+                if (typeof callback === 'function') {
+                    callback.call(mockSelect);
+                }
+            });
+            
+            const mockOptionSelects = {
+                each: mockEach,
+                length: 1
+            };
+            const mockQuantitySelects = {
+                each: jest.fn(),
+                length: 0
+            };
+            
+            $.mockImplementation((selector) => {
+                if (selector === '.basket-field') {
+                    return { remove: jest.fn() };
+                }
+                if (selector === '.option-select') {
+                    return mockOptionSelects;
+                }
+                if (selector === '.quantity-select') {
+                    return mockQuantitySelects;
+                }
+                if (selector === mockSelect) {
+                    return mockSelect;
+                }
+                return { each: jest.fn(), length: 0 };
+            });
+
+            FormService.generateBasketFields();
+
+            // Should save original-name when it doesn't exist
+            expect(mockData).toHaveBeenCalledWith('original-name');
+            expect(mockAttr).toHaveBeenCalledWith('name');
+            expect(mockData).toHaveBeenCalledWith('original-name', 'option-name');
+            expect(mockRemoveAttr).toHaveBeenCalledWith('name');
+        });
+
+        test('should save original-name for quantity selects when it does not exist', () => {
+            const mockAttr = jest.fn().mockReturnValue('quantity-name');
+            const mockData = jest.fn().mockReturnValue(null); // original-name doesn't exist
+            const mockRemoveAttr = jest.fn();
+            const mockSelect = {
+                data: mockData,
+                attr: mockAttr,
+                removeAttr: mockRemoveAttr
+            };
+            const mockEach = jest.fn((callback) => {
+                if (typeof callback === 'function') {
+                    callback.call(mockSelect);
+                }
+            });
+            
+            const mockOptionSelects = {
+                each: jest.fn(),
+                length: 0
+            };
+            const mockQuantitySelects = {
+                each: mockEach,
+                length: 1
+            };
+            
+            $.mockImplementation((selector) => {
+                if (selector === '.basket-field') {
+                    return { remove: jest.fn() };
+                }
+                if (selector === '.option-select') {
+                    return mockOptionSelects;
+                }
+                if (selector === '.quantity-select') {
+                    return mockQuantitySelects;
+                }
+                if (selector === mockSelect) {
+                    return mockSelect;
+                }
+                return { each: jest.fn(), length: 0 };
+            });
+
+            FormService.generateBasketFields();
+
+            // Should save original-name when it doesn't exist
+            expect(mockData).toHaveBeenCalledWith('original-name');
+            expect(mockAttr).toHaveBeenCalledWith('name');
+            expect(mockData).toHaveBeenCalledWith('original-name', 'quantity-name');
+            expect(mockRemoveAttr).toHaveBeenCalledWith('name');
+        });
+    });
+
+    describe('restoreFormFields', () => {
+        test('should restore original name for option selects when originalName exists', () => {
+            const mockAttr = jest.fn();
+            const mockData = jest.fn().mockReturnValue('original-option-name');
+            const mockSelect = {
+                data: mockData,
+                attr: mockAttr
+            };
+            const mockEach = jest.fn((callback) => {
+                if (typeof callback === 'function') {
+                    // When callback is called, $(this) should return mockSelect
+                    callback.call(mockSelect);
+                }
+            });
+            
+            const mockOptionSelects = {
+                each: mockEach,
+                length: 1
+            };
+            const mockQuantitySelects = {
+                each: jest.fn(),
+                length: 0
+            };
+            
+            // Clear previous mocks
+            jest.clearAllMocks();
+            
+            let callCount = 0;
+            $.mockImplementation((selector) => {
+                callCount++;
+                if (selector === '.option-select') {
+                    return mockOptionSelects;
+                }
+                if (selector === '.quantity-select') {
+                    return mockQuantitySelects;
+                }
+                // When $(this) is called inside the callback, return mockSelect
+                if (selector === mockSelect) {
+                    return mockSelect;
+                }
+                return { each: jest.fn(), length: 0 };
+            });
+
+            FormService.restoreFormFields();
+
+            expect(mockEach).toHaveBeenCalled();
+            expect(mockData).toHaveBeenCalledWith('original-name');
+            expect(mockAttr).toHaveBeenCalledWith('name', 'original-option-name');
+        });
+
+        test('should restore original name for quantity selects when originalName exists', () => {
+            const mockAttr = jest.fn();
+            const mockData = jest.fn().mockReturnValue('original-quantity-name');
+            const mockSelect = {
+                data: mockData,
+                attr: mockAttr
+            };
+            const mockEach = jest.fn((callback) => {
+                if (typeof callback === 'function') {
+                    callback.call(mockSelect);
+                }
+            });
+            
+            const mockOptionSelects = {
+                each: jest.fn(),
+                length: 0
+            };
+            const mockQuantitySelects = {
+                each: mockEach,
+                length: 1
+            };
+            
+            $.mockImplementation((selector) => {
+                if (selector === '.option-select') {
+                    return mockOptionSelects;
+                }
+                if (selector === '.quantity-select') {
+                    return mockQuantitySelects;
+                }
+                // When $(this) is called inside the callback, return mockSelect
+                if (selector === mockSelect) {
+                    return mockSelect;
+                }
+                return { each: jest.fn(), length: 0 };
+            });
+
+            FormService.restoreFormFields();
+
+            expect(mockData).toHaveBeenCalledWith('original-name');
+            expect(mockAttr).toHaveBeenCalledWith('name', 'original-quantity-name');
+        });
+
+        test('should not restore name when originalName does not exist', () => {
+            const mockAttr = jest.fn();
+            const mockData = jest.fn().mockReturnValue(null);
+            const mockSelect = {
+                data: mockData,
+                attr: mockAttr
+            };
+            const mockEach = jest.fn((callback) => {
+                if (typeof callback === 'function') {
+                    callback.call(mockSelect);
+                }
+            });
+            
+            const mockOptionSelects = {
+                each: mockEach,
+                length: 1
+            };
+            const mockQuantitySelects = {
+                each: jest.fn(),
+                length: 0
+            };
+            
+            $.mockImplementation((selector) => {
+                if (selector === '.option-select') {
+                    return mockOptionSelects;
+                }
+                if (selector === '.quantity-select') {
+                    return mockQuantitySelects;
+                }
+                // When $(this) is called inside the callback, return mockSelect
+                if (selector === mockSelect) {
+                    return mockSelect;
+                }
+                return { each: jest.fn(), length: 0 };
+            });
+
+            FormService.restoreFormFields();
+
+            expect(mockData).toHaveBeenCalledWith('original-name');
+            expect(mockAttr).not.toHaveBeenCalled();
+        });
     });
 });
 

@@ -11,7 +11,7 @@ describe('OptionHandler Integration - handleChange', () => {
     beforeEach(() => {
         SimpleShop = require('../../js/main.js');
         jest.clearAllMocks();
-        
+
         // Set up shopConfig
         if (typeof shopConfig !== 'undefined') {
             shopConfig.translations.times = 'times';
@@ -243,8 +243,108 @@ describe('OptionHandler Integration - handleChange', () => {
             SimpleShop.OptionHandler.handleChange(mockSelect);
 
             // Should use inventory (3) instead of maxCount (10)
-            expect(buildQuantityOptionsSpy).toHaveBeenCalledWith(1, 3, 10.50);
+            // selectedQuantity should be 0 since basket is empty
+            expect(buildQuantityOptionsSpy).toHaveBeenCalledWith(1, 3, 10.50, 0);
         });
+
+        test('should pre-select basket quantity when item exists in basket', () => {
+            // Add item to basket first
+            SimpleShop.BasketLogic.addItem('item1', 'Item 1', 'bundle1', 'Bundle 1', 'option1', 'Option 1', 3, 10.50);
+
+            const mockSelect = {
+                attr: jest.fn((attr) => {
+                    if (attr === 'data-item-id') return 'item1';
+                    return null;
+                }),
+                find: jest.fn(() => ({
+                    val: jest.fn(() => 'option1'),
+                    attr: jest.fn((attr) => {
+                        if (attr === 'data-bundle-id') return 'bundle1';
+                        if (attr === 'data-bundle-option-id') return 'option1';
+                        if (attr === 'data-price') return '10.50';
+                        if (attr === 'data-min-count') return '1';
+                        if (attr === 'data-max-count') return '10';
+                        if (attr === 'data-inventory') return '5';
+                        return null;
+                    })
+                }))
+            };
+
+            const mockQuantitySelect = {
+                length: 1,
+                empty: jest.fn().mockReturnThis(),
+                append: jest.fn().mockReturnThis(),
+                attr: jest.fn().mockReturnThis()
+            };
+
+            SimpleShop.DomService.get = jest.fn((selector) => {
+                if (selector === '#quantity_item1 select.quantity-select') {
+                    return mockQuantitySelect;
+                }
+                return { length: 1 };
+            });
+
+            const buildQuantityOptionsSpy = jest.spyOn(SimpleShop.OptionHandler, 'buildQuantityOptions');
+
+            SimpleShop.OptionHandler.handleChange(mockSelect);
+
+            // Should pass basket quantity (3) as selectedQuantity
+            expect(buildQuantityOptionsSpy).toHaveBeenCalledWith(1, 5, 10.50, 3);
+
+            buildQuantityOptionsSpy.mockRestore();
+        });
+
+        test('should select 0 when item does not exist in basket', () => {
+            // Ensure basket is empty
+            SimpleShop.clearBasket();
+
+            const mockSelect = {
+                attr: jest.fn((attr) => {
+                    if (attr === 'data-item-id') return 'item1';
+                    return null;
+                }),
+                find: jest.fn(() => ({
+                    val: jest.fn(() => 'option1'),
+                    attr: jest.fn((attr) => {
+                        if (attr === 'data-bundle-id') return 'bundle1';
+                        if (attr === 'data-bundle-option-id') return 'option1';
+                        if (attr === 'data-price') return '10.50';
+                        if (attr === 'data-min-count') return '1';
+                        if (attr === 'data-max-count') return '10';
+                        if (attr === 'data-inventory') return '5';
+                        return null;
+                    })
+                }))
+            };
+
+            const mockQuantitySelect = {
+                length: 1,
+                empty: jest.fn().mockReturnThis(),
+                append: jest.fn().mockReturnThis(),
+                attr: jest.fn().mockReturnThis()
+            };
+
+            SimpleShop.DomService.get = jest.fn((selector) => {
+                if (selector === '#quantity_item1 select.quantity-select') {
+                    return mockQuantitySelect;
+                }
+                return { length: 1 };
+            });
+
+            const buildQuantityOptionsSpy = jest.spyOn(SimpleShop.OptionHandler, 'buildQuantityOptions');
+
+            SimpleShop.OptionHandler.handleChange(mockSelect);
+
+            // Should pass 0 as selectedQuantity when item not in basket
+            expect(buildQuantityOptionsSpy).toHaveBeenCalledWith(1, 5, 10.50, 0);
+
+            buildQuantityOptionsSpy.mockRestore();
+        });
+
+        // Note: Tests for showInventory scenarios (lines 421, 447) are difficult to test
+        // because shopConfig is a global variable that may be captured at module load time.
+        // These lines are edge cases that require showInventory to be true, which is typically
+        // set in the PHP template before the module loads. Coverage is already above 80%.
     });
 });
 

@@ -36,13 +36,13 @@ describe('SimpleShop Public API', () => {
             expect(basket[0].quantity).toBe(2);
         });
 
-        test('should accumulate quantities for same item', () => {
+        test('should replace quantity for same item', () => {
             SimpleShop.addToBasket('item1', 'Item', 'bundle1', 'Bundle', 'option1', 'Option', 2, 10);
             SimpleShop.addToBasket('item1', 'Item', 'bundle1', 'Bundle', 'option1', 'Option', 3, 10);
             
             const basket = SimpleShop.getBasket();
             expect(basket.length).toBe(1);
-            expect(basket[0].quantity).toBe(5);
+            expect(basket[0].quantity).toBe(3); // Replaced with new quantity, not accumulated
         });
     });
 

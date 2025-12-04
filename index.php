@@ -29,7 +29,10 @@ Translation::setInstance($translation);
             translations: {
                 times: '<?php echo t('times') ?>',
                 remove: '<?php echo t('remove') ?>',
-                errorFillRequired: '<?php echo t('error.fill_required') ?>'
+                errorFillRequired: '<?php echo t('error.fill_required') ?>',
+                errorSpecifyQuantity: '<?php echo t('error.specify_quantity') ?>',
+                addedToBasket: '<?php echo t('added_to_basket') ?>',
+                updatedToBasket: '<?php echo t('updated_to_basket') ?>'
             }
         };
     </script>

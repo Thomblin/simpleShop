@@ -20,6 +20,8 @@ describe('SimpleShop Public API - Additional Functions', () => {
             shopConfig.translations.times = 'times';
             shopConfig.translations.remove = 'Remove';
             shopConfig.translations.errorFillRequired = 'Please fill required fields';
+            shopConfig.translations.addedToBasket = 'Added!';
+            shopConfig.translations.updatedToBasket = 'Updated!';
             shopConfig.currency = '€';
             shopConfig.showInventory = false;
         }
@@ -190,21 +192,44 @@ describe('SimpleShop Public API - Additional Functions', () => {
     });
 
     describe('showSuccessMessage', () => {
-        test('should fade in and fade out success message', () => {
+
+        test('should fade in and fade out success message for new item', () => {
             const mockElement = {
                 fadeIn: jest.fn(),
-                fadeOut: jest.fn()
+                fadeOut: jest.fn(),
+                html: jest.fn(),
+                css: jest.fn()
             };
             SimpleShop.DomService.get = jest.fn().mockReturnValue(mockElement);
             
             jest.useFakeTimers();
-            SimpleShop.showSuccessMessage('item1');
+            SimpleShop.showSuccessMessage('item1', false);
             
             expect(SimpleShop.DomService.get).toHaveBeenCalledWith('#success_item1');
+            expect(mockElement.html).toHaveBeenCalledWith('✓ Added!');
+            expect(mockElement.css).toHaveBeenCalledWith('color', '#008800');
             expect(mockElement.fadeIn).toHaveBeenCalledWith(200);
             
             jest.advanceTimersByTime(1000);
             expect(mockElement.fadeOut).toHaveBeenCalledWith(1000);
+            
+            jest.useRealTimers();
+        });
+
+        test('should show blue message for updated item', () => {
+            const mockElement = {
+                fadeIn: jest.fn(),
+                fadeOut: jest.fn(),
+                html: jest.fn(),
+                css: jest.fn()
+            };
+            SimpleShop.DomService.get = jest.fn().mockReturnValue(mockElement);
+            
+            jest.useFakeTimers();
+            SimpleShop.showSuccessMessage('item1', true);
+            
+            expect(mockElement.html).toHaveBeenCalledWith('✓ Updated!');
+            expect(mockElement.css).toHaveBeenCalledWith('color', '#0000ff');
             
             jest.useRealTimers();
         });
@@ -214,7 +239,7 @@ describe('SimpleShop Public API - Additional Functions', () => {
             SimpleShop.DomService.get = jest.fn().mockReturnValue(mockElement);
             
             expect(() => {
-                SimpleShop.showSuccessMessage('item1');
+                SimpleShop.showSuccessMessage('item1', false);
             }).not.toThrow();
         });
 
@@ -263,6 +288,57 @@ describe('SimpleShop Public API - Additional Functions', () => {
             expect(generateBasketFieldsSpy).toHaveBeenCalled();
             
             generateBasketFieldsSpy.mockRestore();
+        });
+    });
+
+    describe('updateBasketTotal', () => {
+        beforeEach(() => {
+            // Set up shopConfig currency
+            if (typeof shopConfig !== 'undefined') {
+                shopConfig.currency = '€';
+            }
+        });
+
+        test('should update basket total display and call calculateTotalWithPorto', () => {
+            SimpleShop.addToBasket('item1', 'Item 1', 'bundle1', 'Bundle 1', '', '', 2, 10);
+            SimpleShop.addToBasket('item2', 'Item 2', 'bundle2', 'Bundle 2', '', '', 3, 15);
+            
+            // Spy on calculateTotalWithPorto
+            const calculateTotalWithPortoSpy = jest.spyOn(SimpleShop, 'calculateTotalWithPorto');
+            
+            SimpleShop.updateBasketTotal();
+            
+            // Should update basket total display
+            expect(SimpleShop.DomService.html).toHaveBeenCalledWith('#basket_total', expect.stringContaining('65'));
+            // Should call calculateTotalWithPorto
+            expect(calculateTotalWithPortoSpy).toHaveBeenCalled();
+            
+            calculateTotalWithPortoSpy.mockRestore();
+        });
+
+        test('should display 0 for empty basket', () => {
+            SimpleShop.clearBasket();
+            
+            SimpleShop.updateBasketTotal();
+            
+            expect(SimpleShop.DomService.html).toHaveBeenCalledWith('#basket_total', expect.stringContaining('0'));
+        });
+
+        test('should format currency correctly', () => {
+            // Ensure currency is set
+            if (typeof shopConfig !== 'undefined') {
+                shopConfig.currency = '€';
+            }
+            
+            SimpleShop.addToBasket('item1', 'Item 1', 'bundle1', 'Bundle 1', '', '', 1, 10.50);
+            
+            SimpleShop.updateBasketTotal();
+            
+            // Should format with currency symbol (formatCurrency adds space + currency)
+            const htmlCall = SimpleShop.DomService.html.mock.calls.find(call => call[0] === '#basket_total');
+            expect(htmlCall).toBeDefined();
+            // Currency is added as ' ' + currency, so check for the formatted price
+            expect(htmlCall[1]).toMatch(/10,50/);
         });
     });
 });

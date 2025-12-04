@@ -11,11 +11,11 @@ describe('OptionHandler', () => {
         if (typeof require !== 'undefined') {
             SimpleShop = require('../../js/main.js');
         } else {
-            SimpleShop = (typeof window !== 'undefined' && window.SimpleShop) || 
-                         (typeof global !== 'undefined' && global.SimpleShop);
+            SimpleShop = (typeof window !== 'undefined' && window.SimpleShop) ||
+                (typeof global !== 'undefined' && global.SimpleShop);
         }
         expect(SimpleShop).not.toBeNull();
-        
+
         // Ensure shopConfig is properly set
         if (typeof shopConfig !== 'undefined') {
             shopConfig.translations.times = 'times';
@@ -26,7 +26,7 @@ describe('OptionHandler', () => {
     describe('parseOptionData', () => {
         test('should return null when no option is selected', () => {
             const OptionHandler = SimpleShop.OptionHandler;
-            
+
             // Mock jQuery select element with empty selection
             const mockSelect = {
                 find: jest.fn(() => ({
@@ -40,7 +40,7 @@ describe('OptionHandler', () => {
 
         test('should parse option data correctly', () => {
             const OptionHandler = SimpleShop.OptionHandler;
-            
+
             const mockSelectedOption = {
                 val: jest.fn(() => 'option1'),
                 attr: jest.fn((attr) => {
@@ -75,7 +75,7 @@ describe('OptionHandler', () => {
     describe('buildQuantityOptions', () => {
         test('should build quantity options with correct format', () => {
             const OptionHandler = SimpleShop.OptionHandler;
-            
+
             // Set up shopConfig - ensure it's set
             if (typeof shopConfig !== 'undefined') {
                 shopConfig.translations.times = 'times';
@@ -96,12 +96,39 @@ describe('OptionHandler', () => {
             expect(options.length).toBeGreaterThan(50); // Should have substantial content
         });
 
-        test('should set first option as selected', () => {
+        test('should set 0 as selected when no selectedQuantity provided', () => {
             const OptionHandler = SimpleShop.OptionHandler;
             const options = OptionHandler.buildQuantityOptions(2, 4, 10);
 
-            expect(options).toContain('<option value="2" selected="selected">');
-            expect(options).not.toContain('<option value="3" selected="selected">');
+            // When no selectedQuantity is provided, it defaults to 0
+            expect(options).toContain('<option value="0" selected="selected">');
+            expect(options).not.toContain('<option value="2" selected="selected">');
+        });
+
+        test('should select basket quantity when provided', () => {
+            const OptionHandler = SimpleShop.OptionHandler;
+            const options = OptionHandler.buildQuantityOptions(1, 5, 10, 3);
+
+            expect(options).toContain('<option value="3" selected="selected">');
+            expect(options).not.toContain('<option value="1" selected="selected">');
+            expect(options).not.toContain('<option value="0" selected="selected">');
+        });
+
+        test('should select 0 when selectedQuantity is 0', () => {
+            const OptionHandler = SimpleShop.OptionHandler;
+            const options = OptionHandler.buildQuantityOptions(1, 5, 10, 0);
+
+            expect(options).toContain('<option value="0" selected="selected">');
+            expect(options).not.toContain('<option value="1" selected="selected">');
+        });
+
+        test('should clamp selectedQuantity to valid range', () => {
+            const OptionHandler = SimpleShop.OptionHandler;
+            // selectedQuantity (10) is greater than maxQuantity (5), should clamp to 5
+            const options = OptionHandler.buildQuantityOptions(1, 5, 10, 10);
+
+            expect(options).toContain('<option value="5" selected="selected">');
+            expect(options).not.toContain('<option value="10"');
         });
 
         test('should handle minCount equal to maxQuantity', () => {
@@ -115,5 +142,8 @@ describe('OptionHandler', () => {
             expect(valueMatches.length).toBeGreaterThanOrEqual(2);
         });
     });
+
+    // Note: Tests for handleChange with showInventory scenarios are in OptionHandlerIntegration.test.js
+    // because they require shopConfig to be set before the module loads
 });
 

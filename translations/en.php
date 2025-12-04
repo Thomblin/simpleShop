@@ -25,6 +25,7 @@ return array(
     'basket_total' => 'Basket Total',
     'add_to_basket' => 'Add to Basket',
     'added_to_basket' => 'Added!',
+    'updated_to_basket' => 'Updated!',
     'remove' => 'Remove',
     'preview' => 'preview',
     'back' => 'back',
@@ -40,5 +41,6 @@ return array(
     'form.success_message' => 'Thank you for your order. You will receive an email soon.',
 
     'error.fill_required' => 'You need to fill in all the required fields!',
+    'error.specify_quantity' => 'Please specify quantity',
     'error.out_of_stock' => 'Could not proceed. No items left',
 );

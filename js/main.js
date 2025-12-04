@@ -12,9 +12,26 @@ if (typeof shopConfig === 'undefined') {
         translations: {
             times: '',
             remove: '',
-            errorFillRequired: ''
+            errorFillRequired: '',
+            errorSpecifyQuantity: 'Please specify quantity',
+            addedToBasket: 'Added!',
+            updatedToBasket: 'Updated!'
         }
     };
+} else {
+    // Ensure translations object exists and has required keys
+    if (!shopConfig.translations) {
+        shopConfig.translations = {};
+    }
+    if (typeof shopConfig.translations.addedToBasket === 'undefined') {
+        shopConfig.translations.addedToBasket = 'Added!';
+    }
+    if (typeof shopConfig.translations.updatedToBasket === 'undefined') {
+        shopConfig.translations.updatedToBasket = 'Updated!';
+    }
+    if (typeof shopConfig.translations.errorSpecifyQuantity === 'undefined') {
+        shopConfig.translations.errorSpecifyQuantity = 'Please specify quantity';
+    }
 }
 
 // Main module namespace
@@ -166,16 +183,16 @@ var SimpleShop = (function () {
             var existingItem = Utils.findBasketItem(itemId, bundleId, bundleOptionId);
 
             if (existingItem) {
-                existingItem.quantity += quantity;
+                existingItem.quantity = quantity;
                 existingItem.totalPrice = existingItem.quantity * existingItem.price;
+                return { basket: basket, wasUpdate: true };
             } else {
                 var basketItem = this.createBasketItem(
                     itemId, itemName, bundleId, bundleName, bundleOptionId, optionLabel, quantity, price
                 );
                 basket.push(basketItem);
+                return { basket: basket, wasUpdate: false };
             }
-
-            return basket;
         },
 
         removeItem: function (basketItemId) {
@@ -268,7 +285,7 @@ var SimpleShop = (function () {
                 // Temporarily remove names from option selects so they're not serialized
                 var $optionSelects = $('.option-select');
                 if ($optionSelects && typeof $optionSelects.each === 'function') {
-                    $optionSelects.each(function() {
+                    $optionSelects.each(function () {
                         var $select = $(this);
                         if ($select && typeof $select.data === 'function' && typeof $select.attr === 'function') {
                             if (!$select.data('original-name')) {
@@ -283,7 +300,7 @@ var SimpleShop = (function () {
                 // Temporarily remove names from quantity selects so they're not serialized
                 var $quantitySelects = $('.quantity-select');
                 if ($quantitySelects && typeof $quantitySelects.each === 'function') {
-                    $quantitySelects.each(function() {
+                    $quantitySelects.each(function () {
                         var $select = $(this);
                         if ($select && typeof $select.data === 'function' && typeof $select.attr === 'function') {
                             if (!$select.data('original-name')) {
@@ -310,14 +327,14 @@ var SimpleShop = (function () {
                 });
             }
         },
-        
+
         restoreFormFields: function () {
             // Restore names to option and quantity selects after form submission
             // This allows the form to work normally if user goes back
             if (typeof $ !== 'undefined') {
                 var $optionSelects = $('.option-select');
                 if ($optionSelects && typeof $optionSelects.each === 'function') {
-                    $optionSelects.each(function() {
+                    $optionSelects.each(function () {
                         var $select = $(this);
                         if ($select && typeof $select.data === 'function' && typeof $select.attr === 'function') {
                             var originalName = $select.data('original-name');
@@ -329,7 +346,7 @@ var SimpleShop = (function () {
                 }
                 var $quantitySelects = $('.quantity-select');
                 if ($quantitySelects && typeof $quantitySelects.each === 'function') {
-                    $quantitySelects.each(function() {
+                    $quantitySelects.each(function () {
                         var $select = $(this);
                         if ($select && typeof $select.data === 'function' && typeof $select.attr === 'function') {
                             var originalName = $select.data('original-name');
@@ -364,13 +381,27 @@ var SimpleShop = (function () {
             };
         },
 
-        buildQuantityOptions: function (minCount, maxQuantity, price) {
+        buildQuantityOptions: function (minCount, maxQuantity, price, selectedQuantity) {
             var options = [];
-            options.push('<option value="0">0 ' + shopConfig.translations.times + '</option>');
+            // Default selectedQuantity to 0 if not provided
+            if (selectedQuantity === undefined || selectedQuantity === null) {
+                selectedQuantity = 0;
+            }
+
+            // Determine which value should be selected
+            var selectedValue = selectedQuantity;
+            // If selectedQuantity is 0, select 0; otherwise ensure it's within valid range
+            if (selectedQuantity > 0) {
+                // Clamp selectedQuantity to valid range [minCount, maxQuantity]
+                selectedValue = Math.max(minCount, Math.min(selectedQuantity, maxQuantity));
+            }
+
+            var selectedAttr0 = (selectedValue === 0) ? ' selected="selected"' : '';
+            options.push('<option value="0"' + selectedAttr0 + '>0 ' + shopConfig.translations.times + '</option>');
 
             for (var i = minCount; i <= maxQuantity; i++) {
                 var optionPrice = Utils.formatPrice(i * price);
-                var selectedAttr = (i === minCount) ? ' selected="selected"' : '';
+                var selectedAttr = (i === selectedValue) ? ' selected="selected"' : '';
                 options.push(
                     '<option value="' + i + '"' + selectedAttr + '>' + i + ' ' +
                     shopConfig.translations.times + ' (' + optionPrice + ' ' + shopConfig.currency + ' )</option>'
@@ -397,8 +428,12 @@ var SimpleShop = (function () {
                 return;
             }
 
+            // Check if this selection already exists in the basket
+            var existingItem = Utils.findBasketItem(itemId, optionData.bundleId, optionData.bundleOptionId);
+            var basketQuantity = existingItem ? existingItem.quantity : 0;
+
             var maxQuantity = Math.min(optionData.maxCount, optionData.inventory);
-            var optionsHtml = this.buildQuantityOptions(optionData.minCount, maxQuantity, optionData.price);
+            var optionsHtml = this.buildQuantityOptions(optionData.minCount, maxQuantity, optionData.price, basketQuantity);
 
             quantitySelect.empty();
             quantitySelect.append(optionsHtml);
@@ -425,9 +460,10 @@ var SimpleShop = (function () {
 
         // Basket operations
         addToBasket: function (itemId, itemName, bundleId, bundleName, bundleOptionId, optionLabel, quantity, price) {
-            BasketLogic.addItem(itemId, itemName, bundleId, bundleName, bundleOptionId, optionLabel, quantity, price);
+            var result = BasketLogic.addItem(itemId, itemName, bundleId, bundleName, bundleOptionId, optionLabel, quantity, price);
             BasketDisplay.render();
             this.updateBasketTotal();
+            return result.wasUpdate;
         },
 
         removeFromBasket: function (basketItemId) {
@@ -464,7 +500,7 @@ var SimpleShop = (function () {
             // Ensure basket fields are generated before preview
             // This also clears visible option/quantity selects to prevent interference
             FormService.generateBasketFields();
-            
+
             var formData = ApiService.serializeForm('#ajax_form');
             ApiService.post('ajax.php', formData, function (response) {
                 if (response.error) {
@@ -495,7 +531,7 @@ var SimpleShop = (function () {
         send: function () {
             // Ensure basket fields are generated before sending order
             FormService.generateBasketFields();
-            
+
             var formData = ApiService.serializeForm('#ajax_form');
             ApiService.post('ajax.php?mail=1', formData, function (response) {
                 if (response.error) {
@@ -526,9 +562,15 @@ var SimpleShop = (function () {
         },
 
         // Success message
-        showSuccessMessage: function (itemId) {
+        showSuccessMessage: function (itemId, isUpdate) {
             var $successMsg = DomService.get('#success_' + itemId);
-            if ($successMsg && $successMsg.fadeIn && $successMsg.fadeOut) {
+            if ($successMsg && $successMsg.fadeIn && $successMsg.fadeOut && $successMsg.html) {
+                // Update message text and color
+                var messageText = isUpdate ? shopConfig.translations.updatedToBasket : shopConfig.translations.addedToBasket;
+                var messageColor = isUpdate ? '#0000ff' : '#008800';
+                $successMsg.html('✓ ' + messageText);
+                $successMsg.css('color', messageColor);
+
                 $successMsg.fadeIn(200);
                 setTimeout(function () {
                     $successMsg.fadeOut(1000);
@@ -594,13 +636,29 @@ $(document).ready(function () {
         // Get quantity
         var quantity = parseInt($('#quantity_' + itemId + ' .quantity-select').val());
 
-        if (!bundleId || quantity <= 0) {
+        // Check if bundleId is missing (no option selected)
+        if (!bundleId) {
             alert(shopConfig.translations.errorFillRequired);
             return;
         }
 
-        SimpleShop.addToBasket(itemId, itemName, bundleId, bundleName, bundleOptionId, optionLabel, quantity, price);
-        SimpleShop.showSuccessMessage(itemId);
+        // Handle quantity 0
+        if (quantity <= 0) {
+            // Check if item exists in basket
+            var existingItem = SimpleShop.Utils.findBasketItem(itemId, bundleId, bundleOptionId);
+            if (existingItem) {
+                // Remove item from basket
+                SimpleShop.removeFromBasket(existingItem.id);
+                return;
+            } else {
+                // Item not in basket, show quantity error
+                alert(shopConfig.translations.errorSpecifyQuantity);
+                return;
+            }
+        }
+
+        var wasUpdate = SimpleShop.addToBasket(itemId, itemName, bundleId, bundleName, bundleOptionId, optionLabel, quantity, price);
+        SimpleShop.showSuccessMessage(itemId, wasUpdate);
     });
 
     // Handle remove from basket
