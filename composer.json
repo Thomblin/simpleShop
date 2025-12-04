@@ -9,7 +9,9 @@
         "phpunit/phpunit": "^9.5"
     },
     "autoload": {
-        "files": ["autoload.php"]
+        "files": [
+            "autoload.php"
+        ]
     },
     "scripts": {
         "test": "phpunit --testdox",

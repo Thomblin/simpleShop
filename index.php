@@ -14,6 +14,8 @@ Translation::init($config);
 <head>
     <title><?php echo t('site.title') ?></title>
     <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
     <link rel="stylesheet" href="css/style.css" />
     <script src="http://code.jquery.com/jquery-1.4.2.min.js"></script>
     <script type="text/javascript">
