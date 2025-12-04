@@ -23,6 +23,12 @@ spl_autoload_register(function ($className) {
     }
 });
 
+// Set a test environment flag to prevent actual email sending
+// MailService will check this constant and skip calling mail() in tests
+if (!defined('PHPUNIT_TEST')) {
+    define('PHPUNIT_TEST', true);
+}
+
 // Define global t() function for tests if it doesn't exist
 // This prevents redeclaration errors when translation.php is loaded
 if (!function_exists('t')) {

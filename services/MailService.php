@@ -6,6 +6,11 @@
 class MailService implements MailServiceInterface
 {
     /**
+     * @var array Stores all sent emails for testing (only populated in test mode)
+     */
+    private static $sentEmails = [];
+
+    /**
      * Send an email with UTF-8 encoding
      *
      * @param string $to Recipient email address
@@ -17,6 +22,21 @@ class MailService implements MailServiceInterface
      */
     public function send($to, $subject, $message, $fromEmail, $fromName)
     {
+        // In test environment, don't actually send emails but track them
+        if (defined('PHPUNIT_TEST') && PHPUNIT_TEST) {
+            // Store the email for testing purposes
+            self::$sentEmails[] = [
+                'to' => $to,
+                'subject' => $subject,
+                'message' => $message,
+                'fromEmail' => $fromEmail,
+                'fromName' => $fromName
+            ];
+            // Return true to simulate successful send
+            // This prevents sendmail from being called during tests
+            return true;
+        }
+
         // Encode from name and subject in UTF-8
         $fromNameEncoded = "=?UTF-8?B?" . base64_encode($fromName) . "?=";
         $subjectEncoded = "=?UTF-8?B?" . base64_encode($subject) . "?=";
@@ -26,7 +46,7 @@ class MailService implements MailServiceInterface
             "MIME-Version: 1.0\r\n" .
             "Content-type: text/html; charset=UTF-8\r\n";
 
-        // Send email
+        // Send email (only in production)
         return mail($to, $subjectEncoded, $message, $headers);
     }
 
@@ -51,5 +71,33 @@ class MailService implements MailServiceInterface
         }
 
         return $allSuccess;
+    }
+
+    /**
+     * Get all sent emails (for testing only)
+     *
+     * @return array
+     */
+    public static function getSentEmails()
+    {
+        return self::$sentEmails;
+    }
+
+    /**
+     * Clear sent emails (for testing only)
+     */
+    public static function clearSentEmails()
+    {
+        self::$sentEmails = [];
+    }
+
+    /**
+     * Get the last sent email (for testing only)
+     *
+     * @return array|null
+     */
+    public static function getLastSentEmail()
+    {
+        return !empty(self::$sentEmails) ? end(self::$sentEmails) : null;
     }
 }

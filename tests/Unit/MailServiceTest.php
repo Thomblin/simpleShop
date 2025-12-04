@@ -70,11 +70,10 @@ class MailServiceTest extends TestCase
 
     public function testSendEncodesUtf8Subject()
     {
+        MailService::clearSentEmails();
         $service = new MailService();
         
-        // Test that send() method can be called (we can't easily test mail() function)
-        // but we can verify the method executes without errors
-        $result = @$service->send(
+        $result = $service->send(
             'test@example.com',
             'Test Subject',
             '<p>Test message</p>',
@@ -82,16 +81,26 @@ class MailServiceTest extends TestCase
             'Test Sender'
         );
         
-        // Result depends on mail() function, but method should execute
-        $this->assertIsBool($result);
+        // Should return true in test mode
+        $this->assertTrue($result);
+        
+        // Verify email was tracked
+        $sentEmails = MailService::getSentEmails();
+        $this->assertCount(1, $sentEmails);
+        $this->assertEquals('test@example.com', $sentEmails[0]['to']);
+        $this->assertEquals('Test Subject', $sentEmails[0]['subject']);
+        $this->assertEquals('<p>Test message</p>', $sentEmails[0]['message']);
+        $this->assertEquals('from@example.com', $sentEmails[0]['fromEmail']);
+        $this->assertEquals('Test Sender', $sentEmails[0]['fromName']);
     }
 
     public function testSendEncodesUtf8FromName()
     {
+        MailService::clearSentEmails();
         $service = new MailService();
         
         // Test with UTF-8 characters in from name
-        $result = @$service->send(
+        $result = $service->send(
             'test@example.com',
             'Test',
             '<p>Message</p>',
@@ -99,14 +108,20 @@ class MailServiceTest extends TestCase
             'Tëst Sënder'
         );
         
-        $this->assertIsBool($result);
+        $this->assertTrue($result);
+        
+        // Verify UTF-8 from name was stored correctly
+        $lastEmail = MailService::getLastSentEmail();
+        $this->assertNotNull($lastEmail);
+        $this->assertEquals('Tëst Sënder', $lastEmail['fromName']);
     }
 
     public function testSendToMultipleWithSingleRecipient()
     {
+        MailService::clearSentEmails();
         $service = new MailService();
         
-        $result = @$service->sendToMultiple(
+        $result = $service->sendToMultiple(
             ['test@example.com'],
             'Test Subject',
             '<p>Test message</p>',
@@ -114,14 +129,20 @@ class MailServiceTest extends TestCase
             'Test Sender'
         );
         
-        $this->assertIsBool($result);
+        $this->assertTrue($result);
+        
+        // Verify email was sent
+        $sentEmails = MailService::getSentEmails();
+        $this->assertCount(1, $sentEmails);
+        $this->assertEquals('test@example.com', $sentEmails[0]['to']);
     }
 
     public function testSendToMultipleWithMultipleRecipients()
     {
+        MailService::clearSentEmails();
         $service = new MailService();
         
-        $result = @$service->sendToMultiple(
+        $result = $service->sendToMultiple(
             ['test1@example.com', 'test2@example.com', 'test3@example.com'],
             'Test Subject',
             '<p>Test message</p>',
@@ -129,15 +150,23 @@ class MailServiceTest extends TestCase
             'Test Sender'
         );
         
-        $this->assertIsBool($result);
+        $this->assertTrue($result);
+        
+        // Verify all emails were sent
+        $sentEmails = MailService::getSentEmails();
+        $this->assertCount(3, $sentEmails);
+        $this->assertEquals('test1@example.com', $sentEmails[0]['to']);
+        $this->assertEquals('test2@example.com', $sentEmails[1]['to']);
+        $this->assertEquals('test3@example.com', $sentEmails[2]['to']);
     }
 
     public function testSendToMultipleReturnsFalseIfAnyFails()
     {
+        MailService::clearSentEmails();
         $service = new MailService();
         
         // With empty recipients array, it should return true (no failures)
-        $result = @$service->sendToMultiple(
+        $result = $service->sendToMultiple(
             [],
             'Test Subject',
             '<p>Test message</p>',
@@ -147,5 +176,9 @@ class MailServiceTest extends TestCase
         
         // If no recipients, all succeed (none to fail)
         $this->assertTrue($result);
+        
+        // No emails should be tracked
+        $sentEmails = MailService::getSentEmails();
+        $this->assertCount(0, $sentEmails);
     }
 }

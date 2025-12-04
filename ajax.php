@@ -277,14 +277,9 @@ if (!isset($_GET['price_only'])) {
 
 function mail_utf8($to, $from_user, $from_email, $subject = '', $message = '')
 {
-    $from_user = "=?UTF-8?B?" . base64_encode($from_user) . "?=";
-    $subject = "=?UTF-8?B?" . base64_encode($subject) . "?=";
-
-    $headers = "From: $from_user <$from_email>\r\n" .
-        "MIME-Version: 1.0" . "\r\n" .
-        "Content-type: text/html; charset=UTF-8" . "\r\n";
-
-    return mail($to, $subject, $message, $headers);
+    // Use MailService instead of calling mail() directly
+    $mailService = new MailService();
+    return $mailService->send($to, $subject, $message, $from_email, $from_user);
 }
 
 if (isset($_GET['mail']) && !isset($result['error'])) {
@@ -294,8 +289,10 @@ if (isset($_GET['mail']) && !isset($result['error'])) {
     } else {
         $text = nl2br($result['mail']);
 
-        mail_utf8(Config::MAIL_ADDRESS, Config::MAIL_USER, Config::MAIL_ADDRESS, t('mail.subject'), $text);
-        mail_utf8($_POST['email'], Config::MAIL_USER, Config::MAIL_ADDRESS, t('mail.subject'), $text);
+        // Use MailService for sending emails
+        $mailService = new MailService();
+        $mailService->send(Config::MAIL_ADDRESS, t('mail.subject'), $text, Config::MAIL_ADDRESS, Config::MAIL_USER);
+        $mailService->send($_POST['email'], t('mail.subject'), $text, Config::MAIL_ADDRESS, Config::MAIL_USER);
     }
     ;
 }
