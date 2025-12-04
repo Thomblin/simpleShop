@@ -3,12 +3,8 @@
          xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/12.0/phpunit.xsd"
          bootstrap="tests/bootstrap.php"
          colors="true"
-         verbose="true"
          failOnWarning="true"
-         failOnRisky="true"
-         convertErrorsToExceptions="true"
-         convertNoticesToExceptions="true"
-         convertWarningsToExceptions="true">
+         failOnRisky="true">
     <testsuites>
         <testsuite name="Unit">
             <directory>tests/Unit</directory>
@@ -17,7 +13,7 @@
             <directory>tests/Integration</directory>
         </testsuite>
     </testsuites>
-    <coverage>
+    <source>
         <include>
             <directory suffix=".php">lib</directory>
             <directory suffix=".php">models</directory>
@@ -26,6 +22,12 @@
         <exclude>
             <file>lib/translation.php</file>
         </exclude>
+    </source>
+    <coverage>
+        <report>
+            <html outputDirectory="coverage"/>
+            <text outputFile="php://stdout"/>
+        </report>
     </coverage>
     <php>
         <ini name="display_errors" value="1"/>

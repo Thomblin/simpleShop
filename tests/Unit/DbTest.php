@@ -182,7 +182,7 @@ class DbTest extends TestCase
             $this->db->fetchAll("SELECT * FROM items WHERE item_id = ? INVALID SQL", [1]);
         } catch (Exception $e) {
             // Should be either RuntimeException or mysqli_sql_exception
-            $this->assertContains(get_class($e), [RuntimeException::class, 'mysqli_sql_exception']);
+            $this->assertContainsEquals(get_class($e), [RuntimeException::class, 'mysqli_sql_exception']);
             // Should mention preparation or SQL error
             $this->assertTrue(
                 strpos($e->getMessage(), 'preparation') !== false ||
@@ -213,7 +213,7 @@ class DbTest extends TestCase
             );
         } catch (Exception $e) {
             // Should be either RuntimeException or mysqli_sql_exception
-            $this->assertContains(get_class($e), [RuntimeException::class, 'mysqli_sql_exception']);
+            $this->assertContainsEquals(get_class($e), [RuntimeException::class, 'mysqli_sql_exception']);
             // Should mention execution failure or foreign key constraint
             $this->assertTrue(
                 strpos($e->getMessage(), 'execution') !== false ||
@@ -277,7 +277,7 @@ class DbTest extends TestCase
             $this->db->execute("INSERT INTO items (name, min_porto) VALUES (?) INVALID SQL", ['test']);
         } catch (Exception $e) {
             // Should be either RuntimeException or mysqli_sql_exception
-            $this->assertContains(get_class($e), [RuntimeException::class, 'mysqli_sql_exception']);
+            $this->assertContainsEquals(get_class($e), [RuntimeException::class, 'mysqli_sql_exception']);
             // Should mention preparation or SQL error
             $this->assertTrue(
                 strpos($e->getMessage(), 'preparation') !== false ||
@@ -435,9 +435,19 @@ class DbTest extends TestCase
     public function testFetchAllWithInvalidTableThrowsException()
     {
         // Test that fetchAll throws exception when querying non-existent table
+        // mysqli throws mysqli_sql_exception for SQL errors
         $this->expectException(Exception::class);
 
-        $this->db->fetchAll("SELECT * FROM nonexistent_table_12345");
+        try {
+            $this->db->fetchAll("SELECT * FROM nonexistent_table_12345");
+        } catch (Exception $e) {
+            // Should be either mysqli_sql_exception or RuntimeException
+            $this->assertContainsEquals(
+                get_class($e),
+                [\mysqli_sql_exception::class, RuntimeException::class, Exception::class]
+            );
+            throw $e;
+        }
     }
 }
 

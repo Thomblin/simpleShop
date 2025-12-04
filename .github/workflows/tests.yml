@@ -157,10 +157,45 @@ jobs:
           # Run tests with coverage text and HTML output
           docker compose exec -T shop vendor/bin/phpunit --coverage-text --coverage-html coverage > coverage_output.txt 2>&1 || true
           
-          # Extract coverage percentages from Summary section (handles ANSI codes)
-          LINE_COVERAGE=$(sed -n '/Summary:/,/^$/p' coverage_output.txt | grep -oP 'Lines:\s+\K[\d.]+' | head -1 || echo "0")
-          METHODS_COVERAGE=$(sed -n '/Summary:/,/^$/p' coverage_output.txt | grep -oP 'Methods:\s+\K[\d.]+' | head -1 || echo "0")
-          CLASS_COVERAGE=$(sed -n '/Summary:/,/^$/p' coverage_output.txt | grep -oP 'Classes:\s+\K[\d.]+' | head -1 || echo "0")
+          # Debug: Show coverage output for troubleshooting
+          echo "=== Coverage Output (last 100 lines) ==="
+          tail -100 coverage_output.txt
+          echo "=== End Coverage Output ==="
+          
+          # Extract coverage percentages - PHPUnit 12 changed the format
+          # Try multiple patterns to handle both PHPUnit 9 and 12 formats
+          
+          # Pattern 1: PHPUnit 9 format with "Summary:" section
+          LINE_COVERAGE=$(sed -n '/Summary:/,/^$/p' coverage_output.txt | grep -oP 'Lines:\s+\K[\d.]+' | head -1)
+          METHODS_COVERAGE=$(sed -n '/Summary:/,/^$/p' coverage_output.txt | grep -oP 'Methods:\s+\K[\d.]+' | head -1)
+          CLASS_COVERAGE=$(sed -n '/Summary:/,/^$/p' coverage_output.txt | grep -oP 'Classes:\s+\K[\d.]+' | head -1)
+          
+          # Pattern 2: PHPUnit 12 format - look for "Code Coverage" or direct "Lines:" pattern
+          if [ -z "$LINE_COVERAGE" ] || [ "$LINE_COVERAGE" = "0" ]; then
+            LINE_COVERAGE=$(grep -oP 'Lines:\s+\K[\d.]+' coverage_output.txt | head -1)
+          fi
+          if [ -z "$METHODS_COVERAGE" ] || [ "$METHODS_COVERAGE" = "0" ]; then
+            METHODS_COVERAGE=$(grep -oP 'Methods:\s+\K[\d.]+' coverage_output.txt | head -1)
+          fi
+          if [ -z "$CLASS_COVERAGE" ] || [ "$CLASS_COVERAGE" = "0" ]; then
+            CLASS_COVERAGE=$(grep -oP 'Classes:\s+\K[\d.]+' coverage_output.txt | head -1)
+          fi
+          
+          # Pattern 3: Table format (if PHPUnit 12 uses tables)
+          if [ -z "$LINE_COVERAGE" ] || [ "$LINE_COVERAGE" = "0" ]; then
+            LINE_COVERAGE=$(grep -E '^\s*Lines\s+\|' coverage_output.txt | awk -F'|' '{print $2}' | tr -d ' %' | head -1)
+          fi
+          if [ -z "$METHODS_COVERAGE" ] || [ "$METHODS_COVERAGE" = "0" ]; then
+            METHODS_COVERAGE=$(grep -E '^\s*Methods\s+\|' coverage_output.txt | awk -F'|' '{print $2}' | tr -d ' %' | head -1)
+          fi
+          if [ -z "$CLASS_COVERAGE" ] || [ "$CLASS_COVERAGE" = "0" ]; then
+            CLASS_COVERAGE=$(grep -E '^\s*Classes\s+\|' coverage_output.txt | awk -F'|' '{print $2}' | tr -d ' %' | head -1)
+          fi
+          
+          # Default to 0 if still not found
+          LINE_COVERAGE=${LINE_COVERAGE:-0}
+          METHODS_COVERAGE=${METHODS_COVERAGE:-0}
+          CLASS_COVERAGE=${CLASS_COVERAGE:-0}
           
           # Remove % sign if present
           LINE_COVERAGE=${LINE_COVERAGE%\%}
