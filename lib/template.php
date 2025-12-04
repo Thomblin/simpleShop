@@ -48,6 +48,37 @@ class Template implements TemplateInterface
             $file = $this->basePath . $file;
         }
 
+        // Get base real path for security check
+        $baseRealPath = realpath($this->basePath);
+
+        // Normalize the file path to detect directory traversal attempts
+        // Even if the file/directory doesn't exist
+        $normalizedFile = str_replace('\\', '/', $file);
+        $normalizedBase = str_replace('\\', '/', $baseRealPath);
+
+        // Check for directory traversal patterns
+        if (strpos($normalizedFile, '..') !== false) {
+            // Path contains .. - check if it would escape base directory
+            // Remove . and .. components to get canonical path
+            $parts = explode('/', $normalizedFile);
+            $canonicalParts = [];
+            foreach ($parts as $part) {
+                if ($part === '.' || $part === '') {
+                    continue;
+                } elseif ($part === '..') {
+                    array_pop($canonicalParts);
+                } else {
+                    $canonicalParts[] = $part;
+                }
+            }
+            $canonicalPath = '/' . implode('/', $canonicalParts);
+
+            // Check if canonical path is within base
+            if (strpos($canonicalPath, $normalizedBase) !== 0) {
+                throw new InvalidArgumentException("Template file outside allowed directory: " . $file);
+            }
+        }
+
         // Check if file exists
         if (!file_exists($file)) {
             throw new InvalidArgumentException("Template file not found: " . $file);
@@ -55,9 +86,8 @@ class Template implements TemplateInterface
 
         // Get real path to prevent directory traversal
         $realPath = realpath($file);
-        $baseRealPath = realpath($this->basePath);
 
-        // Ensure the file is within the base path (prevent directory traversal)
+        // Final check: ensure the file is within the base path
         if (strpos($realPath, $baseRealPath) !== 0) {
             throw new InvalidArgumentException("Template file outside allowed directory: " . $file);
         }

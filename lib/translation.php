@@ -92,7 +92,9 @@ class Translation implements TranslationInterface
  * @param string $key
  * @return string
  */
-function t($key)
-{
-    return Translation::translateStatic($key);
+if (!function_exists('t')) {
+    function t($key)
+    {
+        return Translation::translateStatic($key);
+    }
 }

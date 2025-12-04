@@ -3,14 +3,14 @@
 class Items
 {
     /**
-     * @var Db
+     * @var DatabaseInterface
      */
     private $db;
 
     /**
-     * @param Db $db
+     * @param DatabaseInterface $db
      */
-    public function __construct(Db $db)
+    public function __construct(DatabaseInterface $db)
     {
         $this->db = $db;
     }
