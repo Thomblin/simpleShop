@@ -1,0 +1,52 @@
+body {
+    background-color: #fff;
+    background-image: url();
+    background-repeat: repeat-y;
+    font-family: georgia, times new roman, times, serif;
+}
+
+div.main {
+    width: 600px;
+    margin-left: 200px;
+    margin-top: 75px;
+    margin-bottom: 75px;
+}
+
+span.head {
+    font-weight: bold;
+}
+
+div.item {
+    border: 2px #880000 solid;
+    margin: 5px 5px;
+    padding: 5px 5px;
+    background: url() #ddd;
+}
+
+span.description {
+    font-style: italic;
+}
+
+div.picture {
+    float: right;
+}
+
+div.footer,
+div.footer a,
+div.footer a:hover,
+div.footer a:visited {
+    position: relative;
+    bottom: 0px;
+    border-top: 1px solid #ccc;
+    font-size: 0.9em;
+    font-style: italic;
+    color: #ccc;
+}
+
+div.intro {
+    position: relative;
+    bottom: 10px;
+    font-size: 1.2em;
+    color: #ccc;
+}
+

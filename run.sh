@@ -238,6 +238,68 @@ test_integration() {
     test --testsuite Integration
 }
 
+# Run JavaScript tests
+test_js() {
+    print_header "Running JavaScript Tests in Docker Container"
+    check_docker
+    
+    # Build the node_test container if needed
+    print_info "Building node_test container..."
+    docker compose build node_test
+    
+    # Install dependencies if node_modules doesn't exist or is empty
+    print_info "Installing npm dependencies..."
+    docker compose run --rm node_test sh -c "if [ ! -d node_modules ] || [ ! -f node_modules/.package-lock.json ] && [ ! -f node_modules/package-lock.json ]; then npm install; fi"
+    
+    # Run tests in container
+    docker compose run --rm node_test npm test
+}
+
+# Run JavaScript tests in watch mode
+test_js_watch() {
+    print_header "Running JavaScript Tests (Watch Mode) in Docker Container"
+    check_docker
+    
+    # Build the node_test container if needed
+    print_info "Building node_test container..."
+    docker compose build node_test
+    
+    # Install dependencies if node_modules doesn't exist or is empty
+    print_info "Installing npm dependencies..."
+    docker compose run --rm node_test sh -c "if [ ! -d node_modules ] || [ ! -f node_modules/.package-lock.json ] && [ ! -f node_modules/package-lock.json ]; then npm install; fi"
+    
+    # Run tests in watch mode (interactive)
+    print_info "Starting watch mode (press Ctrl+C to stop)..."
+    docker compose run --rm node_test npm run test:watch
+}
+
+# Run JavaScript tests with coverage
+test_js_coverage() {
+    print_header "Running JavaScript Tests with Coverage in Docker Container"
+    check_docker
+    
+    # Build the node_test container if needed
+    print_info "Building node_test container..."
+    docker compose build node_test
+    
+    # Install dependencies if node_modules doesn't exist or is empty
+    print_info "Installing npm dependencies..."
+    docker compose run --rm node_test sh -c "if [ ! -d node_modules ] || [ ! -f node_modules/.package-lock.json ] && [ ! -f node_modules/package-lock.json ]; then npm install; fi"
+    
+    # Run tests with coverage in container
+    docker compose run --rm node_test npm run test:coverage
+    
+    if [ -d "coverage/js" ] && [ -f "coverage/js/index.html" ]; then
+        print_success "Coverage report generated in coverage/js/ directory"
+        COVERAGE_PATH=$(realpath coverage/js/index.html)
+        print_info "Coverage report is available at: file://$COVERAGE_PATH"
+        print_info "Open it in your browser with:"
+        print_info "  - Linux: xdg-open coverage/js/index.html"
+        print_info "  - macOS: open coverage/js/index.html"
+        print_info "  - Windows: start coverage/js/index.html"
+    fi
+}
+
 # Install dependencies
 install() {
     print_header "Installing Dependencies"
@@ -357,10 +419,13 @@ ${GREEN}Container Management:${NC}
   clean              Clean up all containers and volumes
 
 ${GREEN}Testing:${NC}
-  test [options]     Run all tests (pass PHPUnit options)
-  test-unit          Run unit tests only
-  test-integration   Run integration tests only
-  test-coverage      Run tests with coverage report
+  test [options]     Run all PHP tests (pass PHPUnit options)
+  test-unit          Run PHP unit tests only
+  test-integration   Run PHP integration tests only
+  test-coverage      Run PHP tests with coverage report
+  test-js            Run JavaScript unit tests
+  test-js-watch      Run JavaScript tests in watch mode
+  test-js-coverage   Run JavaScript tests with coverage
 
 ${GREEN}Development:${NC}
   install            Install composer dependencies
@@ -419,6 +484,15 @@ case "$1" in
         ;;
     test-coverage)
         test_coverage
+        ;;
+    test-js)
+        test_js
+        ;;
+    test-js-watch)
+        test_js_watch
+        ;;
+    test-js-coverage)
+        test_js_coverage
         ;;
     install)
         install

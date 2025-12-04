@@ -24,10 +24,13 @@ help:
 	@echo "  make clean              - Clean up all containers and volumes"
 	@echo ""
 	@echo "$(GREEN)Testing:$(NC)"
-	@echo "  make test               - Run all tests"
-	@echo "  make test-unit          - Run unit tests only"
-	@echo "  make test-integration   - Run integration tests only"
-	@echo "  make test-coverage      - Run tests with coverage"
+	@echo "  make test               - Run all tests (PHP + JS)"
+	@echo "  make test-unit          - Run PHP unit tests only"
+	@echo "  make test-integration   - Run PHP integration tests only"
+	@echo "  make test-coverage      - Run PHP tests with coverage"
+	@echo "  make test-js            - Run JavaScript unit tests"
+	@echo "  make test-js-watch      - Run JavaScript tests in watch mode"
+	@echo "  make test-js-coverage   - Run JavaScript tests with coverage"
 	@echo ""
 	@echo "$(GREEN)Development:$(NC)"
 	@echo "  make install            - Install composer dependencies"
@@ -109,6 +112,18 @@ up: start
 ## setup: Initial setup (start + install)
 setup: start install
 	@echo "$(GREEN)Setup complete! Run 'make test' to verify.$(NC)"
+
+## test-js: Run JavaScript unit tests
+test-js:
+	@./run.sh test-js
+
+## test-js-watch: Run JavaScript tests in watch mode
+test-js-watch:
+	@./run.sh test-js-watch
+
+## test-js-coverage: Run JavaScript tests with coverage
+test-js-coverage:
+	@./run.sh test-js-coverage
 
 ## ci: Run CI pipeline (start, install, test, down)
 ci: start install test down

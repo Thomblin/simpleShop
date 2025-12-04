@@ -49,7 +49,18 @@ jobs:
       - name: Install Composer dependencies
         run: docker compose exec -T shop composer install --no-interaction --prefer-dist --optimize-autoloader
 
-      - name: Run all tests
+      - name: Build Node.js test container
+        run: docker compose build node_test
+
+      - name: Install npm dependencies
+        run: docker compose run --rm node_test npm ci
+
+      - name: Run JavaScript tests
+        run: |
+          # Run tests (coverage threshold is enforced in test:coverage)
+          docker compose run --rm node_test npm test
+
+      - name: Run PHP tests
         run: docker compose exec -T shop vendor/bin/phpunit --testdox
 
   test-coverage:
@@ -96,7 +107,51 @@ jobs:
       - name: Install Composer dependencies
         run: docker compose exec -T shop composer install --no-interaction --prefer-dist --optimize-autoloader
 
-      - name: Run tests with coverage
+      - name: Build Node.js test container
+        run: docker compose build node_test
+
+      - name: Install npm dependencies
+        run: docker compose run --rm node_test npm ci
+
+      - name: Run JavaScript tests with coverage
+        id: js_coverage_check
+        run: |
+          # Run tests with coverage and capture output
+          docker compose run --rm node_test npm run test:coverage > js_coverage_output.txt 2>&1 || JS_TEST_EXIT=$?
+          
+          # Extract line coverage from Jest output
+          # Jest outputs coverage in format: "All files |   84.18 |       88 | ..."
+          # The line coverage is the second column after the first pipe
+          JS_LINE_COVERAGE=$(grep -E "^All files" js_coverage_output.txt | awk -F'|' '{print $2}' | xargs | awk '{print $1}' || echo "0")
+          
+          # Remove any trailing % if present
+          JS_LINE_COVERAGE=${JS_LINE_COVERAGE%\%}
+          
+          # If still empty or 0, try alternative extraction
+          if [ -z "$JS_LINE_COVERAGE" ] || [ "$JS_LINE_COVERAGE" = "0" ]; then
+            JS_LINE_COVERAGE=$(grep -oP 'All files.*?\|\s+\K[\d.]+' js_coverage_output.txt | head -1 || echo "0")
+          fi
+          
+          echo "JavaScript Line Coverage: ${JS_LINE_COVERAGE}%"
+          
+          # Set output for later steps
+          echo "js_line_coverage=${JS_LINE_COVERAGE}" >> $GITHUB_OUTPUT
+          
+          # Check threshold and fail if below 80%
+          if [ $(echo "$JS_LINE_COVERAGE" | awk '{print ($1 < 80)}') -eq 1 ]; then
+            echo "❌ JavaScript line coverage (${JS_LINE_COVERAGE}%) is below required threshold (80%)"
+            echo "::error::JavaScript coverage threshold not met. Line coverage must be >= 80%"
+            exit 1
+          else
+            echo "✅ JavaScript line coverage (${JS_LINE_COVERAGE}%) meets threshold (80%)"
+          fi
+          
+          # If tests failed, exit with that code
+          if [ -n "$JS_TEST_EXIT" ]; then
+            exit $JS_TEST_EXIT
+          fi
+
+      - name: Run PHP tests with coverage
         id: coverage_check
         run: |
           # Run tests with coverage text and HTML output
@@ -149,17 +204,25 @@ jobs:
             exit 1
           fi
 
-      - name: Upload coverage report
+      - name: Upload PHP coverage report
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: coverage-report
+          name: php-coverage-report
           path: coverage/
+          retention-days: 7
+
+      - name: Upload JavaScript coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: js-coverage-report
+          path: coverage/js/
           retention-days: 7
 
       - name: Comment PR with coverage summary
         uses: actions/github-script@v7
-        if: github.event_name == 'pull_request' && steps.coverage_check.outcome == 'success'
+        if: github.event_name == 'pull_request' && steps.coverage_check.outcome == 'success' && steps.js_coverage_check.outcome == 'success'
         with:
           script: |
             const fs = require('fs');
@@ -169,22 +232,27 @@ jobs:
               const lineCoverage = '${{ steps.coverage_check.outputs.line_coverage }}';
               const methodsCoverage = '${{ steps.coverage_check.outputs.methods_coverage }}';
               const classCoverage = '${{ steps.coverage_check.outputs.class_coverage }}';
+              const jsLineCoverage = '${{ steps.js_coverage_check.outputs.js_line_coverage }}';
               
               const coveragePath = path.join(process.cwd(), 'coverage', 'index.html');
               const hasReport = fs.existsSync(coveragePath);
               
               let status = '✅';
-              if (parseFloat(lineCoverage) < 90 || parseFloat(methodsCoverage) < 80 || parseFloat(classCoverage) < 60) {
+              if (parseFloat(lineCoverage) < 90 || parseFloat(methodsCoverage) < 80 || parseFloat(classCoverage) < 60 || parseFloat(jsLineCoverage) < 80) {
                 status = '❌';
               }
               
               const body = `## ${status} Test Coverage Report
               
+              ### PHP Coverage
               **Line Coverage:** ${lineCoverage}% ${parseFloat(lineCoverage) >= 90 ? '✅' : '❌ (Required: ≥90%)'}
               **Methods Coverage:** ${methodsCoverage}% ${parseFloat(methodsCoverage) >= 80 ? '✅' : '❌ (Required: ≥80%)'}
               **Class Coverage:** ${classCoverage}% ${parseFloat(classCoverage) >= 60 ? '✅' : '❌ (Required: ≥60%)'}
               
-              ${hasReport ? '📥 Download the full HTML report from the workflow artifacts to view detailed coverage information.' : 'Coverage report is being generated...'}`;
+              ### JavaScript Coverage
+              **Line Coverage:** ${jsLineCoverage}% ${parseFloat(jsLineCoverage) >= 80 ? '✅' : '❌ (Required: ≥80%)'}
+              
+              ${hasReport ? '📥 Download the full HTML reports from the workflow artifacts to view detailed coverage information.' : 'Coverage reports are being generated...'}`;
               
               github.rest.issues.createComment({
                 issue_number: context.issue.number,

@@ -24,7 +24,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-
   test_mysql:
     image: mysql:8.4
     environment:
@@ -42,5 +41,16 @@ services:
     tmpfs:
       - /var/lib/mysql
 
+  node_test:
+    build:
+      context: .
+      dockerfile: ./docker/node/Dockerfile
+    volumes:
+      - ./:/app
+      - node_modules:/app/node_modules
+    working_dir: /app
+    command: npm test
+
 volumes:
   mysql_data:
+  node_modules:
