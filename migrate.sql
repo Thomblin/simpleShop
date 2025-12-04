@@ -13,10 +13,6 @@ CREATE TABLE IF NOT EXISTS `bundles` (
     `bundle_id` INT UNSIGNED AUTO_INCREMENT,
     `item_id` INT UNSIGNED NOT NULL COMMENT "items.id",
     `name` VARCHAR(256) NOT NULL COMMENT "subtitle",
-    `price` DECIMAL(10, 2) DEFAULT 0 COMMENT "price per item",
-    `min_count` INT DEFAULT 0 COMMENT "min amount to buy",
-    `max_count` INT DEFAULT 1 COMMENT "max amount to buy",
-    `inventory` INT DEFAULT 0 COMMENT "items left in stock",
     PRIMARY KEY (`bundle_id`),
     KEY (`item_id`),
     CONSTRAINT `fk_item_id` FOREIGN KEY `fk_item_id` (`item_id`) REFERENCES `items` (`item_id`) ON DELETE RESTRICT ON UPDATE CASCADE
@@ -45,14 +41,15 @@ CREATE TABLE IF NOT EXISTS `options` (
 ) ENGINE = InnoDB DEFAULT CHARACTER SET = utf8 COLLATE = utf8_bin;
 
 -- Add bundle_options junction table (links bundles to their option combinations)
+-- Note: Every bundle MUST have at least one bundle_option entry
 CREATE TABLE IF NOT EXISTS `bundle_options` (
     `bundle_option_id` INT UNSIGNED AUTO_INCREMENT,
     `bundle_id` INT UNSIGNED NOT NULL COMMENT "bundles.bundle_id",
     `option_id` INT UNSIGNED NOT NULL COMMENT "options.option_id",
-    `price` DECIMAL(10, 2) DEFAULT NULL COMMENT "override price per item for this bundle+option",
-    `min_count` INT DEFAULT NULL COMMENT "override min amount to buy for this bundle+option",
-    `max_count` INT DEFAULT NULL COMMENT "override max amount to buy for this bundle+option",
-    `inventory` INT DEFAULT NULL COMMENT "inventory for this bundle+option (if NULL, falls back to bundle)",
+    `price` DECIMAL(10, 2) NOT NULL COMMENT "price per item for this bundle+option",
+    `min_count` INT NOT NULL DEFAULT 0 COMMENT "min amount to buy for this bundle+option",
+    `max_count` INT NOT NULL DEFAULT 1 COMMENT "max amount to buy for this bundle+option",
+    `inventory` INT NOT NULL DEFAULT 0 COMMENT "inventory for this bundle+option",
     PRIMARY KEY (`bundle_option_id`),
     KEY (`bundle_id`),
     KEY (`option_id`),

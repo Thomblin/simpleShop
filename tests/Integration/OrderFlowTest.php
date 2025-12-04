@@ -45,11 +45,20 @@ class OrderFlowTest extends TestCase
                 ['item_id' => 1, 'name' => 'Test Product', 'picture' => null, 'description' => null, 'min_porto' => 5.50]
             ],
             'bundles' => [
-                ['bundle_id' => 10, 'item_id' => 1, 'name' => 'Small Package', 'price' => 29.99, 'min_count' => 1, 'max_count' => 5, 'inventory' => 100]
+                ['bundle_id' => 10, 'item_id' => 1, 'name' => 'Small Package']
+            ],
+            'option_groups' => [
+                ['option_group_id' => 1, 'name' => 'Default', 'display_order' => 0]
+            ],
+            'options' => [
+                ['option_id' => 1, 'option_group_id' => 1, 'name' => 'Default', 'display_order' => 0, 'description' => null]
+            ],
+            'bundle_options' => [
+                ['bundle_option_id' => 1, 'bundle_id' => 10, 'option_id' => 1, 'price' => 29.99, 'min_count' => 1, 'max_count' => 5, 'inventory' => 100]
             ]
         ]);
 
-        // Set up shop data
+        // Set up shop data (price, min_count, max_count, inventory come from bundle_options via database)
         $shopItems = [
             [
                 'item_id' => 1,
@@ -58,11 +67,7 @@ class OrderFlowTest extends TestCase
                 'bundles' => [
                     [
                         'bundle_id' => 10,
-                        'name' => 'Small Package',
-                        'price' => 29.99,
-                        'min_count' => 1,
-                        'max_count' => 5,
-                        'inventory' => 100
+                        'name' => 'Small Package'
                     ]
                 ],
                 'option_groups' => []
@@ -94,7 +99,8 @@ class OrderFlowTest extends TestCase
         // Get orders for persistence
         $ordersForDb = $order->getOrdersForPersistence();
         $this->assertCount(1, $ordersForDb);
-        $this->assertEquals(10, $ordersForDb[0]['bundle_id']);
+        $this->assertArrayHasKey('bundle_option_id', $ordersForDb[0]);
+        $this->assertEquals(1, $ordersForDb[0]['bundle_option_id']); // Should be the bundle_option_id we created
         $this->assertEquals(2, $ordersForDb[0]['amount']);
 
         // Persist the order
@@ -102,8 +108,8 @@ class OrderFlowTest extends TestCase
         $this->assertTrue($success);
 
         // Verify inventory was updated (transaction committed)
-        $bundle = $this->dbHelper->getData('bundles', 'bundle_id = 10')[0];
-        $this->assertEquals(98, $bundle['inventory']); // 100 - 2 = 98
+        $bundleOption = $this->dbHelper->getData('bundle_options', 'bundle_id = 10')[0];
+        $this->assertEquals(98, $bundleOption['inventory']); // 100 - 2 = 98
     }
 
     public function testCompleteOrderFlowWithInsufficientInventory()
@@ -114,7 +120,16 @@ class OrderFlowTest extends TestCase
                 ['item_id' => 1, 'name' => 'Limited Product', 'picture' => null, 'description' => null, 'min_porto' => 3.00]
             ],
             'bundles' => [
-                ['bundle_id' => 20, 'item_id' => 1, 'name' => 'Last Items', 'price' => 99.99, 'min_count' => 1, 'max_count' => 10, 'inventory' => 3]
+                ['bundle_id' => 20, 'item_id' => 1, 'name' => 'Last Items']
+            ],
+            'option_groups' => [
+                ['option_group_id' => 1, 'name' => 'Default', 'display_order' => 0]
+            ],
+            'options' => [
+                ['option_id' => 1, 'option_group_id' => 1, 'name' => 'Default', 'display_order' => 0, 'description' => null]
+            ],
+            'bundle_options' => [
+                ['bundle_option_id' => 1, 'bundle_id' => 20, 'option_id' => 1, 'price' => 99.99, 'min_count' => 1, 'max_count' => 10, 'inventory' => 3]
             ]
         ]);
 
@@ -127,11 +142,7 @@ class OrderFlowTest extends TestCase
                 'bundles' => [
                     [
                         'bundle_id' => 20,
-                        'name' => 'Last Items',
-                        'price' => 99.99,
-                        'min_count' => 1,
-                        'max_count' => 10,
-                        'inventory' => 3  // Only 3 left
+                        'name' => 'Last Items'
                     ]
                 ],
                 'option_groups' => []
@@ -153,16 +164,17 @@ class OrderFlowTest extends TestCase
         $this->assertEquals(3, $order->items[0]->amount); // Clamped to available
         $this->assertTrue($order->items[0]->outOfStock);
 
-        // Try to persist - should fail because we tried to order 5
+        // Try to persist - should fail because we tried to order 5 (but only 3 available)
         $ordersForDb = $order->getOrdersForPersistence();
-        $ordersForDb[0]['amount'] = 5; // Restore original amount
+        // The order already has the correct amount (3), but let's try with 5 to test validation
+        $ordersForDb[0]['amount'] = 5; // Try to order 5
 
         $success = $this->items->orderItem($ordersForDb);
         $this->assertFalse($success);
 
         // Verify rollback occurred - inventory should still be 3
-        $bundle = $this->dbHelper->getData('bundles', 'bundle_id = 20')[0];
-        $this->assertEquals(3, $bundle['inventory']); // Should still be 3 (transaction rolled back)
+        $bundleOption = $this->dbHelper->getData('bundle_options', 'bundle_id = 20')[0];
+        $this->assertEquals(3, $bundleOption['inventory']); // Should still be 3 (transaction rolled back)
     }
 
     public function testOrderFlowWithCollectionByCustomer()
@@ -173,7 +185,16 @@ class OrderFlowTest extends TestCase
                 ['item_id' => 1, 'name' => 'Product', 'picture' => null, 'description' => null, 'min_porto' => 10.00]
             ],
             'bundles' => [
-                ['bundle_id' => 30, 'item_id' => 1, 'name' => 'Standard', 'price' => 50.00, 'min_count' => 1, 'max_count' => 10, 'inventory' => 50]
+                ['bundle_id' => 30, 'item_id' => 1, 'name' => 'Standard']
+            ],
+            'option_groups' => [
+                ['option_group_id' => 1, 'name' => 'Default', 'display_order' => 0]
+            ],
+            'options' => [
+                ['option_id' => 1, 'option_group_id' => 1, 'name' => 'Default', 'display_order' => 0, 'description' => null]
+            ],
+            'bundle_options' => [
+                ['bundle_option_id' => 1, 'bundle_id' => 30, 'option_id' => 1, 'price' => 50.00, 'min_count' => 1, 'max_count' => 10, 'inventory' => 50]
             ]
         ]);
 
@@ -185,11 +206,7 @@ class OrderFlowTest extends TestCase
                 'bundles' => [
                     [
                         'bundle_id' => 30,
-                        'name' => 'Standard',
-                        'price' => 50.00,
-                        'min_count' => 1,
-                        'max_count' => 10,
-                        'inventory' => 50
+                        'name' => 'Standard'
                     ]
                 ],
                 'option_groups' => []
@@ -220,8 +237,18 @@ class OrderFlowTest extends TestCase
                 ['item_id' => 2, 'name' => 'Product B', 'picture' => null, 'description' => null, 'min_porto' => 7.50]
             ],
             'bundles' => [
-                ['bundle_id' => 10, 'item_id' => 1, 'name' => 'Bundle A', 'price' => 10.00, 'min_count' => 1, 'max_count' => 10, 'inventory' => 50],
-                ['bundle_id' => 20, 'item_id' => 2, 'name' => 'Bundle B', 'price' => 20.00, 'min_count' => 1, 'max_count' => 10, 'inventory' => 30]
+                ['bundle_id' => 10, 'item_id' => 1, 'name' => 'Bundle A'],
+                ['bundle_id' => 20, 'item_id' => 2, 'name' => 'Bundle B']
+            ],
+            'option_groups' => [
+                ['option_group_id' => 1, 'name' => 'Default', 'display_order' => 0]
+            ],
+            'options' => [
+                ['option_id' => 1, 'option_group_id' => 1, 'name' => 'Default', 'display_order' => 0, 'description' => null]
+            ],
+            'bundle_options' => [
+                ['bundle_option_id' => 1, 'bundle_id' => 10, 'option_id' => 1, 'price' => 10.00, 'min_count' => 1, 'max_count' => 10, 'inventory' => 50],
+                ['bundle_option_id' => 2, 'bundle_id' => 20, 'option_id' => 1, 'price' => 20.00, 'min_count' => 1, 'max_count' => 10, 'inventory' => 30]
             ]
         ]);
 
@@ -231,7 +258,7 @@ class OrderFlowTest extends TestCase
                 'name' => 'Product A',
                 'min_porto' => 5.00,
                 'bundles' => [
-                    ['bundle_id' => 10, 'name' => 'Bundle A', 'price' => 10.00, 'min_count' => 1, 'max_count' => 10, 'inventory' => 50]
+                    ['bundle_id' => 10, 'name' => 'Bundle A']
                 ],
                 'option_groups' => []
             ],
@@ -240,7 +267,7 @@ class OrderFlowTest extends TestCase
                 'name' => 'Product B',
                 'min_porto' => 7.50,  // Higher shipping cost
                 'bundles' => [
-                    ['bundle_id' => 20, 'name' => 'Bundle B', 'price' => 20.00, 'min_count' => 1, 'max_count' => 10, 'inventory' => 30]
+                    ['bundle_id' => 20, 'name' => 'Bundle B']
                 ],
                 'option_groups' => []
             ]
@@ -271,10 +298,10 @@ class OrderFlowTest extends TestCase
         $this->assertTrue($success);
 
         // Verify inventory was updated for both bundles
-        $bundle10 = $this->dbHelper->getData('bundles', 'bundle_id = 10')[0];
-        $bundle20 = $this->dbHelper->getData('bundles', 'bundle_id = 20')[0];
-        $this->assertEquals(48, $bundle10['inventory']); // 50 - 2 = 48
-        $this->assertEquals(27, $bundle20['inventory']); // 30 - 3 = 27
+        $bundleOption10 = $this->dbHelper->getData('bundle_options', 'bundle_id = 10')[0];
+        $bundleOption20 = $this->dbHelper->getData('bundle_options', 'bundle_id = 20')[0];
+        $this->assertEquals(48, $bundleOption10['inventory']); // 50 - 2 = 48
+        $this->assertEquals(27, $bundleOption20['inventory']); // 30 - 3 = 27
     }
 
     public function testPriceCalculation()

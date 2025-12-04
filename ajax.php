@@ -101,12 +101,12 @@ foreach ($shopItems as $item) {
             foreach ($postValue as $boId => $rawAmount) {
                 $amount = (int) $rawAmount;
 
-                // Find exact option by bundle_option_id
+                // Find exact option by bundle_option_id - all values come from bundle_options
                 $effective = [
-                    'price' => (float) $bundle['price'],
-                    'min_count' => (int) $bundle['min_count'],
-                    'max_count' => (int) $bundle['max_count'],
-                    'inventory' => (int) $bundle['inventory'],
+                    'price' => 0.0,
+                    'min_count' => 0,
+                    'max_count' => 1,
+                    'inventory' => 0,
                     'bundle_option_id' => (int) $boId,
                     'option_description' => null
                 ];
@@ -123,6 +123,21 @@ foreach ($shopItems as $item) {
                                 break 2;
                             }
                         }
+                    }
+                } else {
+                    // If no option_groups, get the first bundle_option for this bundle
+                    $bundleOptions = $items->getBundleOptionsForBundle($bundle['bundle_id']);
+                    if (empty($bundleOptions)) {
+                        throw new RuntimeException("Bundle {$bundle['bundle_id']} has no bundle_options. Every bundle must have at least one bundle_option.");
+                    }
+                    $firstOption = $bundleOptions[0];
+                    if ((int) $firstOption['bundle_option_id'] === (int) $boId) {
+                        $effective['price'] = (float) $firstOption['price'];
+                        $effective['min_count'] = (int) $firstOption['min_count'];
+                        $effective['max_count'] = (int) $firstOption['max_count'];
+                        $effective['inventory'] = (int) $firstOption['inventory'];
+                    } else {
+                        throw new RuntimeException("Bundle option ID {$boId} not found for bundle {$bundle['bundle_id']}");
                     }
                 }
 
@@ -156,17 +171,17 @@ foreach ($shopItems as $item) {
             // Legacy scalar structure
             $amount = (int) $postValue;
 
-            // Default to bundle-level attributes
+            // All values must come from bundle_options - no bundle-level fallback
             $effective = [
-                'price' => (float) $bundle['price'],
-                'min_count' => (int) $bundle['min_count'],
-                'max_count' => (int) $bundle['max_count'],
-                'inventory' => (int) $bundle['inventory'],
+                'price' => 0.0,
+                'min_count' => 0,
+                'max_count' => 1,
+                'inventory' => 0,
                 'bundle_option_id' => null,
                 'option_description' => null
             ];
 
-            // Try to find a matching selected option for this bundle to override values
+            // Try to find a matching selected option for this bundle
             if (!empty($item['option_groups'])) {
                 foreach ($item['option_groups'] as $group) {
                     $selectedOptionId = isset($selectedOptionByGroup[$group['group_id']]) ? $selectedOptionByGroup[$group['group_id']] : null;
@@ -186,6 +201,18 @@ foreach ($shopItems as $item) {
                         }
                     }
                 }
+            } else {
+                // If no option_groups, get the first bundle_option for this bundle
+                $bundleOptions = $items->getBundleOptionsForBundle($bundle['bundle_id']);
+                if (empty($bundleOptions)) {
+                    throw new RuntimeException("Bundle {$bundle['bundle_id']} has no bundle_options. Every bundle must have at least one bundle_option.");
+                }
+                $firstOption = $bundleOptions[0];
+                $effective['price'] = (float) $firstOption['price'];
+                $effective['min_count'] = (int) $firstOption['min_count'];
+                $effective['max_count'] = (int) $firstOption['max_count'];
+                $effective['inventory'] = (int) $firstOption['inventory'];
+                $effective['bundle_option_id'] = (int) $firstOption['bundle_option_id'];
             }
 
             // Apply min/max and stock checks with effective values

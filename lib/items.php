@@ -19,13 +19,13 @@ class Items
     {
         $items = [];
 
-        foreach($this->loadItems() as $item) {
+        foreach ($this->loadItems() as $item) {
             $items[$item['item_id']] = $item;
             $items[$item['item_id']]['bundles'] = [];
             $items[$item['item_id']]['option_groups'] = [];
         }
 
-        foreach($this->loadBundles() as $bundle) {
+        foreach ($this->loadBundles() as $bundle) {
             if (isset($items[$bundle['item_id']]['bundles'])) {
                 $items[$bundle['item_id']]['bundles'][] = $bundle;
             }
@@ -33,7 +33,7 @@ class Items
 
         // Load and organize options by item and option group
         $itemOptions = $this->loadItemOptions();
-        foreach($items as &$item) {
+        foreach ($items as &$item) {
             $itemId = $item['item_id'];
             if (isset($itemOptions[$itemId])) {
                 $item['option_groups'] = $itemOptions[$itemId];
@@ -56,31 +56,27 @@ class Items
      */
     private function loadBundles()
     {
-        return $this->db->fetchAll("SELECT * FROM bundles");
+        // Load bundles - note: bundles no longer have price, min_count, max_count, inventory
+        // These fields are now only in bundle_options
+        return $this->db->fetchAll("SELECT bundle_id, item_id, name FROM bundles");
     }
 
     /**
      * Load inventory data for validation and updates
      *
-     * @return array ['bundles' => array, 'bundleOptions' => array]
+     * @return array ['bundleOptions' => array]
      */
     private function loadInventoryData()
     {
-        $bundleInventories = [];
-        foreach ($this->loadBundles() as $bundle) {
-            $bundleInventories[$bundle['bundle_id']] = (int)$bundle['inventory'];
-        }
-
         $bundleOptionInventories = [];
         foreach ($this->db->fetchAll("SELECT bundle_option_id, bundle_id, inventory FROM bundle_options") as $row) {
-            $bundleOptionInventories[(int)$row['bundle_option_id']] = [
-                'bundle_id' => (int)$row['bundle_id'],
-                'inventory' => is_null($row['inventory']) ? null : (int)$row['inventory']
+            $bundleOptionInventories[(int) $row['bundle_option_id']] = [
+                'bundle_id' => (int) $row['bundle_id'],
+                'inventory' => (int) $row['inventory']
             ];
         }
 
         return [
-            'bundles' => $bundleInventories,
             'bundleOptions' => $bundleOptionInventories
         ];
     }
@@ -89,29 +85,21 @@ class Items
      * Validate that all orders have sufficient inventory
      *
      * @param array $orders
-     * @param array $bundleInventories
      * @param array $bundleOptionInventories
      * @return bool True if all orders can be fulfilled
      */
-    private function validateOrderAvailability(array $orders, array $bundleInventories, array $bundleOptionInventories)
+    private function validateOrderAvailability(array $orders, array $bundleOptionInventories)
     {
         foreach ($orders as $order) {
-            $amount = (int)$order['amount'];
-            $bundleOptionId = isset($order['bundle_option_id']) ? (int)$order['bundle_option_id'] : 0;
-            $bundleId = isset($order['bundle_id']) ? (int)$order['bundle_id'] : 0;
+            $amount = (int) $order['amount'];
+            $bundleOptionId = isset($order['bundle_option_id']) ? (int) $order['bundle_option_id'] : 0;
 
-            if ($bundleOptionId && isset($bundleOptionInventories[$bundleOptionId]) && $bundleOptionInventories[$bundleOptionId]['inventory'] !== null) {
-                if ($amount > $bundleOptionInventories[$bundleOptionId]['inventory']) {
-                    return false;
-                }
-            } else {
-                // Fallback to bundle inventory
-                if (empty($bundleId) && $bundleOptionId && isset($bundleOptionInventories[$bundleOptionId])) {
-                    $bundleId = $bundleOptionInventories[$bundleOptionId]['bundle_id'];
-                }
-                if (!isset($bundleInventories[$bundleId]) || $amount > $bundleInventories[$bundleId]) {
-                    return false;
-                }
+            if (!$bundleOptionId || !isset($bundleOptionInventories[$bundleOptionId])) {
+                return false; // All orders must have a valid bundle_option_id
+            }
+
+            if ($amount > $bundleOptionInventories[$bundleOptionId]['inventory']) {
+                return false;
             }
         }
 
@@ -128,24 +116,17 @@ class Items
     private function executeInventoryUpdates(array $orders, array $bundleOptionInventories)
     {
         foreach ($orders as $order) {
-            $amount = (int)$order['amount'];
-            $bundleOptionId = isset($order['bundle_option_id']) ? (int)$order['bundle_option_id'] : 0;
-            $bundleId = isset($order['bundle_id']) ? (int)$order['bundle_id'] : 0;
+            $amount = (int) $order['amount'];
+            $bundleOptionId = isset($order['bundle_option_id']) ? (int) $order['bundle_option_id'] : 0;
 
-            if ($bundleOptionId && isset($bundleOptionInventories[$bundleOptionId]) && $bundleOptionInventories[$bundleOptionId]['inventory'] !== null) {
-                $this->db->execute(
-                    "UPDATE bundle_options SET inventory = inventory - ? WHERE bundle_option_id = ?",
-                    [$amount, $bundleOptionId]
-                );
-            } else {
-                if (empty($bundleId) && $bundleOptionId && isset($bundleOptionInventories[$bundleOptionId])) {
-                    $bundleId = $bundleOptionInventories[$bundleOptionId]['bundle_id'];
-                }
-                $this->db->execute(
-                    "UPDATE bundles SET inventory = inventory - ? WHERE bundle_id = ?",
-                    [$amount, $bundleId]
-                );
+            if (!$bundleOptionId || !isset($bundleOptionInventories[$bundleOptionId])) {
+                throw new RuntimeException("Invalid bundle_option_id in order");
             }
+
+            $this->db->execute(
+                "UPDATE bundle_options SET inventory = inventory - ? WHERE bundle_option_id = ?",
+                [$amount, $bundleOptionId]
+            );
         }
     }
 
@@ -161,11 +142,10 @@ class Items
 
         try {
             $inventoryData = $this->loadInventoryData();
-            $bundleInventories = $inventoryData['bundles'];
             $bundleOptionInventories = $inventoryData['bundleOptions'];
 
             // Validate availability first
-            if (!$this->validateOrderAvailability($orders, $bundleInventories, $bundleOptionInventories)) {
+            if (!$this->validateOrderAvailability($orders, $bundleOptionInventories)) {
                 $this->db->rollback();
                 return false;
             }
@@ -202,10 +182,10 @@ class Items
                 b.bundle_id,
                 b.name as bundle_name,
                 bo.bundle_option_id,
-                COALESCE(bo.price, b.price) AS price,
-                COALESCE(bo.min_count, b.min_count) AS min_count,
-                COALESCE(bo.max_count, b.max_count) AS max_count,
-                COALESCE(bo.inventory, b.inventory) AS inventory
+                bo.price AS price,
+                bo.min_count AS min_count,
+                bo.max_count AS max_count,
+                bo.inventory AS inventory
             FROM items i
             JOIN bundles b ON i.item_id = b.item_id
             JOIN bundle_options bo ON b.bundle_id = bo.bundle_id
@@ -214,7 +194,7 @@ class Items
             ORDER BY i.item_id, og.display_order, o.display_order
         ";
 
-        foreach($this->db->fetchAll($query) as $row) {
+        foreach ($this->db->fetchAll($query) as $row) {
             $itemId = $row['item_id'];
             $groupId = $row['option_group_id'];
 
@@ -245,5 +225,24 @@ class Items
         }
 
         return $result;
+    }
+
+    /**
+     * Get all bundle_options for a specific bundle
+     * Used when bundles don't have option_groups
+     *
+     * @param int $bundleId
+     * @return array
+     */
+    public function getBundleOptionsForBundle($bundleId)
+    {
+        return $this->db->fetchAll(
+            "SELECT bundle_option_id, bundle_id, option_id, price, min_count, max_count, inventory 
+             FROM bundle_options 
+             WHERE bundle_id = ? 
+             ORDER BY bundle_option_id 
+             LIMIT 1",
+            [$bundleId]
+        );
     }
 }

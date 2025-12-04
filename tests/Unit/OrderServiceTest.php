@@ -89,6 +89,25 @@ class OrderServiceTest extends TestCase
 
     public function testProcessOrderWithSimpleBundleAmount()
     {
+        // Set up database
+        $this->dbHelper->insertData([
+            'items' => [
+                ['item_id' => 1, 'name' => 'Test Item', 'picture' => null, 'description' => null, 'min_porto' => 5.0]
+            ],
+            'bundles' => [
+                ['bundle_id' => 10, 'item_id' => 1, 'name' => 'Test Bundle']
+            ],
+            'option_groups' => [
+                ['option_group_id' => 1, 'name' => 'Default', 'display_order' => 0]
+            ],
+            'options' => [
+                ['option_id' => 1, 'option_group_id' => 1, 'name' => 'Default', 'display_order' => 0, 'description' => null]
+            ],
+            'bundle_options' => [
+                ['bundle_option_id' => 100, 'bundle_id' => 10, 'option_id' => 1, 'price' => 100.0, 'min_count' => 1, 'max_count' => 10, 'inventory' => 20]
+            ]
+        ]);
+
         $shopItems = [
             [
                 'item_id' => 1,
@@ -97,11 +116,7 @@ class OrderServiceTest extends TestCase
                 'bundles' => [
                     [
                         'bundle_id' => 10,
-                        'name' => 'Test Bundle',
-                        'price' => 100.0,
-                        'min_count' => 1,
-                        'max_count' => 10,
-                        'inventory' => 20
+                        'name' => 'Test Bundle'
                     ]
                 ],
                 'option_groups' => []
@@ -124,6 +139,25 @@ class OrderServiceTest extends TestCase
 
     public function testProcessOrderWithNestedBundleOptions()
     {
+        // Set up database
+        $this->dbHelper->insertData([
+            'items' => [
+                ['item_id' => 1, 'name' => 'Test Item', 'picture' => null, 'description' => null, 'min_porto' => 5.0]
+            ],
+            'bundles' => [
+                ['bundle_id' => 10, 'item_id' => 1, 'name' => 'Test Bundle']
+            ],
+            'option_groups' => [
+                ['option_group_id' => 1, 'name' => 'Default', 'display_order' => 0]
+            ],
+            'options' => [
+                ['option_id' => 1, 'option_group_id' => 1, 'name' => 'Default', 'display_order' => 0, 'description' => null]
+            ],
+            'bundle_options' => [
+                ['bundle_option_id' => 100, 'bundle_id' => 10, 'option_id' => 1, 'price' => 100.0, 'min_count' => 1, 'max_count' => 10, 'inventory' => 20]
+            ]
+        ]);
+
         $shopItems = [
             [
                 'item_id' => 1,
@@ -132,11 +166,7 @@ class OrderServiceTest extends TestCase
                 'bundles' => [
                     [
                         'bundle_id' => 10,
-                        'name' => 'Test Bundle',
-                        'price' => 100.0,
-                        'min_count' => 1,
-                        'max_count' => 10,
-                        'inventory' => 20
+                        'name' => 'Test Bundle'
                     ]
                 ],
                 'option_groups' => []
@@ -198,6 +228,25 @@ class OrderServiceTest extends TestCase
 
     public function testProcessOrderAppliesMinMaxCount()
     {
+        // Set up database
+        $this->dbHelper->insertData([
+            'items' => [
+                ['item_id' => 1, 'name' => 'Test Item', 'picture' => null, 'description' => null, 'min_porto' => 0]
+            ],
+            'bundles' => [
+                ['bundle_id' => 10, 'item_id' => 1, 'name' => 'Test Bundle']
+            ],
+            'option_groups' => [
+                ['option_group_id' => 1, 'name' => 'Default', 'display_order' => 0]
+            ],
+            'options' => [
+                ['option_id' => 1, 'option_group_id' => 1, 'name' => 'Default', 'display_order' => 0, 'description' => null]
+            ],
+            'bundle_options' => [
+                ['bundle_option_id' => 100, 'bundle_id' => 10, 'option_id' => 1, 'price' => 100.0, 'min_count' => 2, 'max_count' => 5, 'inventory' => 20]
+            ]
+        ]);
+
         $shopItems = [
             [
                 'item_id' => 1,
@@ -206,11 +255,7 @@ class OrderServiceTest extends TestCase
                 'bundles' => [
                     [
                         'bundle_id' => 10,
-                        'name' => 'Test Bundle',
-                        'price' => 100.0,
-                        'min_count' => 2,
-                        'max_count' => 5,
-                        'inventory' => 20
+                        'name' => 'Test Bundle'
                     ]
                 ],
                 'option_groups' => []
@@ -230,6 +275,25 @@ class OrderServiceTest extends TestCase
 
     public function testProcessOrderMarksOutOfStockItems()
     {
+        // Set up database
+        $this->dbHelper->insertData([
+            'items' => [
+                ['item_id' => 1, 'name' => 'Test Item', 'picture' => null, 'description' => null, 'min_porto' => 0]
+            ],
+            'bundles' => [
+                ['bundle_id' => 10, 'item_id' => 1, 'name' => 'Test Bundle']
+            ],
+            'option_groups' => [
+                ['option_group_id' => 1, 'name' => 'Default', 'display_order' => 0]
+            ],
+            'options' => [
+                ['option_id' => 1, 'option_group_id' => 1, 'name' => 'Default', 'display_order' => 0, 'description' => null]
+            ],
+            'bundle_options' => [
+                ['bundle_option_id' => 100, 'bundle_id' => 10, 'option_id' => 1, 'price' => 100.0, 'min_count' => 1, 'max_count' => 10, 'inventory' => 5]
+            ]
+        ]);
+
         $shopItems = [
             [
                 'item_id' => 1,
@@ -238,11 +302,7 @@ class OrderServiceTest extends TestCase
                 'bundles' => [
                     [
                         'bundle_id' => 10,
-                        'name' => 'Test Bundle',
-                        'price' => 100.0,
-                        'min_count' => 1,
-                        'max_count' => 10,
-                        'inventory' => 5  // Only 5 in stock
+                        'name' => 'Test Bundle'
                     ]
                 ],
                 'option_groups' => []
@@ -278,6 +338,25 @@ class OrderServiceTest extends TestCase
 
     public function testProcessOrderWithOptionGroups()
     {
+        // Set up database
+        $this->dbHelper->insertData([
+            'items' => [
+                ['item_id' => 1, 'name' => 'Test Item', 'picture' => null, 'description' => null, 'min_porto' => 5.0]
+            ],
+            'bundles' => [
+                ['bundle_id' => 10, 'item_id' => 1, 'name' => 'Test Bundle']
+            ],
+            'option_groups' => [
+                ['option_group_id' => 100, 'name' => 'Size', 'display_order' => 0]
+            ],
+            'options' => [
+                ['option_id' => 200, 'option_group_id' => 100, 'name' => 'Small', 'display_order' => 0, 'description' => 'Small size']
+            ],
+            'bundle_options' => [
+                ['bundle_option_id' => 300, 'bundle_id' => 10, 'option_id' => 200, 'price' => 90.0, 'min_count' => 1, 'max_count' => 10, 'inventory' => 15]
+            ]
+        ]);
+
         $shopItems = [
             [
                 'item_id' => 1,
@@ -286,11 +365,7 @@ class OrderServiceTest extends TestCase
                 'bundles' => [
                     [
                         'bundle_id' => 10,
-                        'name' => 'Test Bundle',
-                        'price' => 100.0,
-                        'min_count' => 1,
-                        'max_count' => 10,
-                        'inventory' => 20
+                        'name' => 'Test Bundle'
                     ]
                 ],
                 'option_groups' => [
@@ -332,6 +407,25 @@ class OrderServiceTest extends TestCase
 
     public function testProcessOrderWithNestedBundleOptionsAndSelectedOption()
     {
+        // Set up database
+        $this->dbHelper->insertData([
+            'items' => [
+                ['item_id' => 1, 'name' => 'Test Item', 'picture' => null, 'description' => null, 'min_porto' => 5.0]
+            ],
+            'bundles' => [
+                ['bundle_id' => 10, 'item_id' => 1, 'name' => 'Test Bundle']
+            ],
+            'option_groups' => [
+                ['option_group_id' => 100, 'name' => 'Size', 'display_order' => 0]
+            ],
+            'options' => [
+                ['option_id' => 200, 'option_group_id' => 100, 'name' => 'Small', 'display_order' => 0, 'description' => 'Small size']
+            ],
+            'bundle_options' => [
+                ['bundle_option_id' => 300, 'bundle_id' => 10, 'option_id' => 200, 'price' => 90.0, 'min_count' => 1, 'max_count' => 10, 'inventory' => 15]
+            ]
+        ]);
+
         $shopItems = [
             [
                 'item_id' => 1,
@@ -340,11 +434,7 @@ class OrderServiceTest extends TestCase
                 'bundles' => [
                     [
                         'bundle_id' => 10,
-                        'name' => 'Test Bundle',
-                        'price' => 100.0,
-                        'min_count' => 1,
-                        'max_count' => 10,
-                        'inventory' => 20
+                        'name' => 'Test Bundle'
                     ]
                 ],
                 'option_groups' => [
@@ -427,6 +517,28 @@ class OrderServiceTest extends TestCase
 
     public function testProcessOrderWithMultipleItemsAndBundles()
     {
+        // Set up database
+        $this->dbHelper->insertData([
+            'items' => [
+                ['item_id' => 1, 'name' => 'Item 1', 'picture' => null, 'description' => null, 'min_porto' => 5.0],
+                ['item_id' => 2, 'name' => 'Item 2', 'picture' => null, 'description' => null, 'min_porto' => 10.0]
+            ],
+            'bundles' => [
+                ['bundle_id' => 10, 'item_id' => 1, 'name' => 'Bundle 1'],
+                ['bundle_id' => 20, 'item_id' => 2, 'name' => 'Bundle 2']
+            ],
+            'option_groups' => [
+                ['option_group_id' => 1, 'name' => 'Default', 'display_order' => 0]
+            ],
+            'options' => [
+                ['option_id' => 1, 'option_group_id' => 1, 'name' => 'Default', 'display_order' => 0, 'description' => null]
+            ],
+            'bundle_options' => [
+                ['bundle_option_id' => 100, 'bundle_id' => 10, 'option_id' => 1, 'price' => 100.0, 'min_count' => 1, 'max_count' => 10, 'inventory' => 20],
+                ['bundle_option_id' => 200, 'bundle_id' => 20, 'option_id' => 1, 'price' => 200.0, 'min_count' => 1, 'max_count' => 5, 'inventory' => 15]
+            ]
+        ]);
+
         $shopItems = [
             [
                 'item_id' => 1,
@@ -435,11 +547,7 @@ class OrderServiceTest extends TestCase
                 'bundles' => [
                     [
                         'bundle_id' => 10,
-                        'name' => 'Bundle 1',
-                        'price' => 100.0,
-                        'min_count' => 1,
-                        'max_count' => 10,
-                        'inventory' => 20
+                        'name' => 'Bundle 1'
                     ]
                 ],
                 'option_groups' => []
@@ -451,11 +559,7 @@ class OrderServiceTest extends TestCase
                 'bundles' => [
                     [
                         'bundle_id' => 20,
-                        'name' => 'Bundle 2',
-                        'price' => 200.0,
-                        'min_count' => 1,
-                        'max_count' => 5,
-                        'inventory' => 15
+                        'name' => 'Bundle 2'
                     ]
                 ],
                 'option_groups' => []

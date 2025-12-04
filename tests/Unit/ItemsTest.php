@@ -11,13 +11,13 @@ class ItemsTest extends TestCase
     protected function setUp(): void
     {
         $this->dbHelper = new TestDatabaseHelper();
-        
+
         // Set up schema first (only once, but safe to call multiple times)
         $this->dbHelper->setupSchema();
-        
+
         // Clean up before each test
         $this->dbHelper->cleanup();
-        
+
         $this->db = $this->dbHelper->getDb();
         $this->items = new Items($this->db);
     }
@@ -44,7 +44,16 @@ class ItemsTest extends TestCase
                 ['item_id' => 1, 'name' => 'Item 1', 'min_porto' => 5.0]
             ],
             'bundles' => [
-                ['bundle_id' => 10, 'item_id' => 1, 'name' => 'Bundle 1', 'price' => 100.0, 'min_count' => 1, 'max_count' => 10, 'inventory' => 20]
+                ['bundle_id' => 10, 'item_id' => 1, 'name' => 'Bundle 1']
+            ],
+            'option_groups' => [
+                ['option_group_id' => 1, 'name' => 'Default', 'display_order' => 0]
+            ],
+            'options' => [
+                ['option_id' => 1, 'option_group_id' => 1, 'name' => 'Default', 'display_order' => 0, 'description' => null]
+            ],
+            'bundle_options' => [
+                ['bundle_option_id' => 100, 'bundle_id' => 10, 'option_id' => 1, 'price' => 100.0, 'min_count' => 1, 'max_count' => 10, 'inventory' => 20]
             ]
         ]);
 
@@ -65,21 +74,30 @@ class ItemsTest extends TestCase
                 ['item_id' => 1, 'name' => 'Test Item', 'min_porto' => 0]
             ],
             'bundles' => [
-                ['bundle_id' => 1, 'item_id' => 1, 'name' => 'Test Bundle', 'price' => 100.0, 'min_count' => 1, 'max_count' => 10, 'inventory' => 10]
+                ['bundle_id' => 1, 'item_id' => 1, 'name' => 'Test Bundle']
+            ],
+            'option_groups' => [
+                ['option_group_id' => 1, 'name' => 'Default', 'display_order' => 0]
+            ],
+            'options' => [
+                ['option_id' => 1, 'option_group_id' => 1, 'name' => 'Default', 'display_order' => 0, 'description' => null]
+            ],
+            'bundle_options' => [
+                ['bundle_option_id' => 100, 'bundle_id' => 1, 'option_id' => 1, 'price' => 100.0, 'min_count' => 1, 'max_count' => 10, 'inventory' => 10]
             ]
         ]);
 
         $orders = [
-            ['bundle_id' => 1, 'amount' => 5]
+            ['bundle_option_id' => 100, 'amount' => 5]
         ];
 
         $result = $this->items->orderItem($orders);
 
         $this->assertTrue($result);
-        
+
         // Verify inventory was updated
-        $bundle = $this->dbHelper->getData('bundles', 'bundle_id = 1')[0];
-        $this->assertEquals(5, $bundle['inventory']); // 10 - 5 = 5
+        $bundleOption = $this->dbHelper->getData('bundle_options', 'bundle_option_id = 100')[0];
+        $this->assertEquals(5, $bundleOption['inventory']); // 10 - 5 = 5
     }
 
     public function testOrderItemWithInsufficientInventory()
@@ -90,21 +108,30 @@ class ItemsTest extends TestCase
                 ['item_id' => 1, 'name' => 'Test Item', 'min_porto' => 0]
             ],
             'bundles' => [
-                ['bundle_id' => 1, 'item_id' => 1, 'name' => 'Test Bundle', 'price' => 100.0, 'min_count' => 1, 'max_count' => 10, 'inventory' => 5]
+                ['bundle_id' => 1, 'item_id' => 1, 'name' => 'Test Bundle']
+            ],
+            'option_groups' => [
+                ['option_group_id' => 1, 'name' => 'Default', 'display_order' => 0]
+            ],
+            'options' => [
+                ['option_id' => 1, 'option_group_id' => 1, 'name' => 'Default', 'display_order' => 0, 'description' => null]
+            ],
+            'bundle_options' => [
+                ['bundle_option_id' => 100, 'bundle_id' => 1, 'option_id' => 1, 'price' => 100.0, 'min_count' => 1, 'max_count' => 10, 'inventory' => 5]
             ]
         ]);
 
         $orders = [
-            ['bundle_id' => 1, 'amount' => 10]
+            ['bundle_option_id' => 100, 'amount' => 10]
         ];
 
         $result = $this->items->orderItem($orders);
 
         $this->assertFalse($result);
-        
+
         // Verify inventory was NOT updated (transaction rolled back)
-        $bundle = $this->dbHelper->getData('bundles', 'bundle_id = 1')[0];
-        $this->assertEquals(5, $bundle['inventory']); // Should still be 5
+        $bundleOption = $this->dbHelper->getData('bundle_options', 'bundle_option_id = 100')[0];
+        $this->assertEquals(5, $bundleOption['inventory']); // Should still be 5
     }
 
     public function testOrderItemUsesPreparedStatements()
@@ -116,20 +143,29 @@ class ItemsTest extends TestCase
                 ['item_id' => 1, 'name' => 'Test Item', 'min_porto' => 0]
             ],
             'bundles' => [
-                ['bundle_id' => 1, 'item_id' => 1, 'name' => 'Test Bundle', 'price' => 100.0, 'min_count' => 1, 'max_count' => 10, 'inventory' => 10]
+                ['bundle_id' => 1, 'item_id' => 1, 'name' => 'Test Bundle']
+            ],
+            'option_groups' => [
+                ['option_group_id' => 1, 'name' => 'Default', 'display_order' => 0]
+            ],
+            'options' => [
+                ['option_id' => 1, 'option_group_id' => 1, 'name' => 'Default', 'display_order' => 0, 'description' => null]
+            ],
+            'bundle_options' => [
+                ['bundle_option_id' => 100, 'bundle_id' => 1, 'option_id' => 1, 'price' => 100.0, 'min_count' => 1, 'max_count' => 10, 'inventory' => 10]
             ]
         ]);
 
         $orders = [
-            ['bundle_id' => 1, 'amount' => 5]
+            ['bundle_option_id' => 100, 'amount' => 5]
         ];
 
         $result = $this->items->orderItem($orders);
         $this->assertTrue($result);
-        
+
         // Verify the update worked (prepared statements are used internally)
-        $bundle = $this->dbHelper->getData('bundles', 'bundle_id = 1')[0];
-        $this->assertEquals(5, $bundle['inventory']);
+        $bundleOption = $this->dbHelper->getData('bundle_options', 'bundle_option_id = 100')[0];
+        $this->assertEquals(5, $bundleOption['inventory']);
     }
 
     public function testOrderItemWithBundleOption()
@@ -139,7 +175,7 @@ class ItemsTest extends TestCase
                 ['item_id' => 1, 'name' => 'Test Item', 'min_porto' => 0]
             ],
             'bundles' => [
-                ['bundle_id' => 1, 'item_id' => 1, 'name' => 'Test Bundle', 'price' => 100.0, 'min_count' => 1, 'max_count' => 10, 'inventory' => 10]
+                ['bundle_id' => 1, 'item_id' => 1, 'name' => 'Test Bundle']
             ],
             'option_groups' => [
                 ['option_group_id' => 1, 'name' => 'Size', 'display_order' => 1]
@@ -148,7 +184,7 @@ class ItemsTest extends TestCase
                 ['option_id' => 1, 'option_group_id' => 1, 'name' => 'Small', 'description' => '', 'display_order' => 1]
             ],
             'bundle_options' => [
-                ['bundle_option_id' => 100, 'bundle_id' => 1, 'option_id' => 1, 'price' => null, 'min_count' => null, 'max_count' => null, 'inventory' => 20]
+                ['bundle_option_id' => 100, 'bundle_id' => 1, 'option_id' => 1, 'price' => 100.0, 'min_count' => 1, 'max_count' => 10, 'inventory' => 20]
             ]
         ]);
 
@@ -159,7 +195,7 @@ class ItemsTest extends TestCase
         $result = $this->items->orderItem($orders);
 
         $this->assertTrue($result);
-        
+
         // Verify bundle_option inventory was updated
         $bundleOption = $this->dbHelper->getData('bundle_options', 'bundle_option_id = 100')[0];
         $this->assertEquals(15, $bundleOption['inventory']); // 20 - 5 = 15
@@ -175,21 +211,30 @@ class ItemsTest extends TestCase
                 ['item_id' => 1, 'name' => 'Test Item', 'min_porto' => 0]
             ],
             'bundles' => [
-                ['bundle_id' => 1, 'item_id' => 1, 'name' => 'Test Bundle', 'price' => 100.0, 'min_count' => 1, 'max_count' => 10, 'inventory' => 10]
+                ['bundle_id' => 1, 'item_id' => 1, 'name' => 'Test Bundle']
+            ],
+            'option_groups' => [
+                ['option_group_id' => 1, 'name' => 'Default', 'display_order' => 0]
+            ],
+            'options' => [
+                ['option_id' => 1, 'option_group_id' => 1, 'name' => 'Default', 'display_order' => 0, 'description' => null]
+            ],
+            'bundle_options' => [
+                ['bundle_option_id' => 100, 'bundle_id' => 1, 'option_id' => 1, 'price' => 100.0, 'min_count' => 1, 'max_count' => 10, 'inventory' => 10]
             ]
         ]);
 
         // Test with invalid order (will fail validation, not exception, but tests rollback)
         $orders = [
-            ['bundle_id' => 1, 'amount' => 20] // Exceeds inventory
+            ['bundle_option_id' => 100, 'amount' => 20] // Exceeds inventory
         ];
 
         $result = $this->items->orderItem($orders);
         $this->assertFalse($result);
-        
+
         // Verify inventory was NOT updated (transaction rolled back)
-        $bundle = $this->dbHelper->getData('bundles', 'bundle_id = 1')[0];
-        $this->assertEquals(10, $bundle['inventory']); // Should still be 10
+        $bundleOption = $this->dbHelper->getData('bundle_options', 'bundle_option_id = 100')[0];
+        $this->assertEquals(10, $bundleOption['inventory']); // Should still be 10
     }
 
     public function testOrderItemWithMultipleOrders()
@@ -200,25 +245,35 @@ class ItemsTest extends TestCase
                 ['item_id' => 2, 'name' => 'Test Item 2', 'min_porto' => 0]
             ],
             'bundles' => [
-                ['bundle_id' => 1, 'item_id' => 1, 'name' => 'Bundle 1', 'price' => 100.0, 'min_count' => 1, 'max_count' => 10, 'inventory' => 10],
-                ['bundle_id' => 2, 'item_id' => 2, 'name' => 'Bundle 2', 'price' => 200.0, 'min_count' => 1, 'max_count' => 10, 'inventory' => 20]
+                ['bundle_id' => 1, 'item_id' => 1, 'name' => 'Bundle 1'],
+                ['bundle_id' => 2, 'item_id' => 2, 'name' => 'Bundle 2']
+            ],
+            'option_groups' => [
+                ['option_group_id' => 1, 'name' => 'Default', 'display_order' => 0]
+            ],
+            'options' => [
+                ['option_id' => 1, 'option_group_id' => 1, 'name' => 'Default', 'display_order' => 0, 'description' => null]
+            ],
+            'bundle_options' => [
+                ['bundle_option_id' => 100, 'bundle_id' => 1, 'option_id' => 1, 'price' => 100.0, 'min_count' => 1, 'max_count' => 10, 'inventory' => 10],
+                ['bundle_option_id' => 200, 'bundle_id' => 2, 'option_id' => 1, 'price' => 200.0, 'min_count' => 1, 'max_count' => 10, 'inventory' => 20]
             ]
         ]);
 
         $orders = [
-            ['bundle_id' => 1, 'amount' => 5],
-            ['bundle_id' => 2, 'amount' => 10]
+            ['bundle_option_id' => 100, 'amount' => 5],
+            ['bundle_option_id' => 200, 'amount' => 10]
         ];
 
         $result = $this->items->orderItem($orders);
 
         $this->assertTrue($result);
-        
+
         // Verify both inventories were updated
-        $bundle1 = $this->dbHelper->getData('bundles', 'bundle_id = 1')[0];
-        $bundle2 = $this->dbHelper->getData('bundles', 'bundle_id = 2')[0];
-        $this->assertEquals(5, $bundle1['inventory']); // 10 - 5 = 5
-        $this->assertEquals(10, $bundle2['inventory']); // 20 - 10 = 10
+        $bundleOption1 = $this->dbHelper->getData('bundle_options', 'bundle_option_id = 100')[0];
+        $bundleOption2 = $this->dbHelper->getData('bundle_options', 'bundle_option_id = 200')[0];
+        $this->assertEquals(5, $bundleOption1['inventory']); // 10 - 5 = 5
+        $this->assertEquals(10, $bundleOption2['inventory']); // 20 - 10 = 10
     }
 
     public function testOrderItemValidatesAllOrdersBeforeUpdating()
@@ -229,25 +284,35 @@ class ItemsTest extends TestCase
                 ['item_id' => 2, 'name' => 'Test Item 2', 'min_porto' => 0]
             ],
             'bundles' => [
-                ['bundle_id' => 1, 'item_id' => 1, 'name' => 'Bundle 1', 'price' => 100.0, 'min_count' => 1, 'max_count' => 10, 'inventory' => 10],
-                ['bundle_id' => 2, 'item_id' => 2, 'name' => 'Bundle 2', 'price' => 200.0, 'min_count' => 1, 'max_count' => 10, 'inventory' => 5]
+                ['bundle_id' => 1, 'item_id' => 1, 'name' => 'Bundle 1'],
+                ['bundle_id' => 2, 'item_id' => 2, 'name' => 'Bundle 2']
+            ],
+            'option_groups' => [
+                ['option_group_id' => 1, 'name' => 'Default', 'display_order' => 0]
+            ],
+            'options' => [
+                ['option_id' => 1, 'option_group_id' => 1, 'name' => 'Default', 'display_order' => 0, 'description' => null]
+            ],
+            'bundle_options' => [
+                ['bundle_option_id' => 100, 'bundle_id' => 1, 'option_id' => 1, 'price' => 100.0, 'min_count' => 1, 'max_count' => 10, 'inventory' => 10],
+                ['bundle_option_id' => 200, 'bundle_id' => 2, 'option_id' => 1, 'price' => 200.0, 'min_count' => 1, 'max_count' => 10, 'inventory' => 5]
             ]
         ]);
 
         $orders = [
-            ['bundle_id' => 1, 'amount' => 5],  // Valid
-            ['bundle_id' => 2, 'amount' => 10]  // Invalid - exceeds inventory
+            ['bundle_option_id' => 100, 'amount' => 5],  // Valid
+            ['bundle_option_id' => 200, 'amount' => 10]  // Invalid - exceeds inventory
         ];
 
         $result = $this->items->orderItem($orders);
 
         $this->assertFalse($result);
-        
+
         // Verify NO updates were performed (transaction rolled back)
-        $bundle1 = $this->dbHelper->getData('bundles', 'bundle_id = 1')[0];
-        $bundle2 = $this->dbHelper->getData('bundles', 'bundle_id = 2')[0];
-        $this->assertEquals(10, $bundle1['inventory']); // Should still be 10
-        $this->assertEquals(5, $bundle2['inventory']); // Should still be 5
+        $bundleOption1 = $this->dbHelper->getData('bundle_options', 'bundle_option_id = 100')[0];
+        $bundleOption2 = $this->dbHelper->getData('bundle_options', 'bundle_option_id = 200')[0];
+        $this->assertEquals(10, $bundleOption1['inventory']); // Should still be 10
+        $this->assertEquals(5, $bundleOption2['inventory']); // Should still be 5
     }
 
     public function testGetItemsLoadsOptionGroups()
@@ -257,7 +322,7 @@ class ItemsTest extends TestCase
                 ['item_id' => 1, 'name' => 'Item 1', 'min_porto' => 0]
             ],
             'bundles' => [
-                ['bundle_id' => 10, 'item_id' => 1, 'name' => 'Bundle 1', 'price' => 100.0, 'min_count' => 1, 'max_count' => 10, 'inventory' => 20]
+                ['bundle_id' => 10, 'item_id' => 1, 'name' => 'Bundle 1']
             ],
             'option_groups' => [
                 ['option_group_id' => 100, 'name' => 'Size', 'display_order' => 1]
@@ -288,7 +353,7 @@ class ItemsTest extends TestCase
                 ['item_id' => 1, 'name' => 'Item 1', 'min_porto' => 0]
             ],
             'bundles' => [
-                ['bundle_id' => 10, 'item_id' => 1, 'name' => 'Bundle 1', 'price' => 100.0, 'min_count' => 1, 'max_count' => 10, 'inventory' => 20]
+                ['bundle_id' => 10, 'item_id' => 1, 'name' => 'Bundle 1']
             ],
             'option_groups' => [
                 ['option_group_id' => 100, 'name' => 'Size', 'display_order' => 1],

@@ -216,11 +216,11 @@ class OrderService
             $porto = max($porto, (float)$item['min_porto']);
 
             $order = ['amount' => $amount];
-            if (!empty($effective['bundle_option_id'])) {
-                $order['bundle_option_id'] = $effective['bundle_option_id'];
-            } else {
-                $order['bundle_id'] = $bundle['bundle_id'];
+            // bundle_option_id is now required - every bundle must have at least one bundle_option
+            if (empty($effective['bundle_option_id'])) {
+                throw new RuntimeException("Bundle {$bundle['bundle_id']} has no bundle_option_id. Every bundle must have at least one bundle_option.");
             }
+            $order['bundle_option_id'] = $effective['bundle_option_id'];
             $orders[] = $order;
         }
     }
@@ -236,11 +236,13 @@ class OrderService
      */
     private function determineEffectiveOptions($bundle, $item, $bundleOptionId, $selectedOptionByGroup)
     {
+        // All price, min_count, max_count, inventory come from bundle_options only
+        // We must find the matching bundle_option from option_groups
         $effective = [
-            'price' => (float)$bundle['price'],
-            'min_count' => (int)$bundle['min_count'],
-            'max_count' => (int)$bundle['max_count'],
-            'inventory' => (int)$bundle['inventory'],
+            'price' => 0.0,
+            'min_count' => 0,
+            'max_count' => 1,
+            'inventory' => 0,
             'bundle_option_id' => $bundleOptionId,
             'option_description' => null
         ];
@@ -267,6 +269,19 @@ class OrderService
                     }
                 }
             }
+        } else {
+            // If no option_groups, try to get the first bundle_option for this bundle
+            // This handles bundles that don't have option groups but still have bundle_options
+            $bundleOptions = $this->items->getBundleOptionsForBundle($bundle['bundle_id']);
+            if (empty($bundleOptions)) {
+                throw new RuntimeException("Bundle {$bundle['bundle_id']} has no bundle_options. Every bundle must have at least one bundle_option.");
+            }
+            $firstOption = $bundleOptions[0];
+            $effective['price'] = (float)$firstOption['price'];
+            $effective['min_count'] = (int)$firstOption['min_count'];
+            $effective['max_count'] = (int)$firstOption['max_count'];
+            $effective['inventory'] = (int)$firstOption['inventory'];
+            $effective['bundle_option_id'] = (int)$firstOption['bundle_option_id'];
         }
 
         return $effective;
