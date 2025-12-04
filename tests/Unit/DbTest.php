@@ -5,7 +5,7 @@ use PHPUnit\Framework\TestCase;
 class DbTest extends TestCase
 {
     private $mockConfig;
-    private $realDb;
+    private $db;
 
     protected function setUp(): void
     {
@@ -23,14 +23,14 @@ class DbTest extends TestCase
             'mysqlPassword' => 'testpass',
             'mysqlDatabase' => 'test_shop'
         ]);
-        $this->realDb = new Db($testConfig);
+        $this->db = new Db($testConfig);
         $this->setupSchema();
         $this->cleanup();
     }
 
     protected function tearDown(): void
     {
-        if ($this->realDb) {
+        if ($this->db) {
             $this->cleanup();
         }
     }
@@ -38,7 +38,7 @@ class DbTest extends TestCase
     private function setupSchema(): void
     {
         $migrationFile = __DIR__ . '/../../migrate.sql';
-        
+
         if (!file_exists($migrationFile)) {
             throw new RuntimeException("Migration file not found: $migrationFile");
         }
@@ -46,12 +46,12 @@ class DbTest extends TestCase
         $sql = file_get_contents($migrationFile);
         $sql = preg_replace('/--.*$/m', '', $sql);
         $sql = preg_replace('/\/\*.*?\*\//s', '', $sql);
-        
-        $this->realDb->execute('SET FOREIGN_KEY_CHECKS = 0');
-        
+
+        $this->db->execute('SET FOREIGN_KEY_CHECKS = 0');
+
         $statements = array_filter(
             array_map('trim', explode(';', $sql)),
-            function($stmt) {
+            function ($stmt) {
                 $stmt = trim($stmt);
                 return !empty($stmt) && !preg_match('/^version/i', $stmt);
             }
@@ -62,41 +62,59 @@ class DbTest extends TestCase
             if (!empty($statement)) {
                 $statement = preg_replace('/TEXT\s+DEFAULT\s+[\'"]?[\'"]/i', 'TEXT', $statement);
                 $statement = preg_replace('/TEXT\s+COMMENT/i', 'TEXT COMMENT', $statement);
-                
+
                 try {
-                    $this->realDb->execute($statement);
+                    $this->db->execute($statement);
                 } catch (Exception $e) {
                     $error = $e->getMessage();
-                    if (strpos($error, 'already exists') === false && 
-                        strpos($error, 'Duplicate') === false) {
-                        $this->realDb->execute('SET FOREIGN_KEY_CHECKS = 1');
+                    if (
+                        strpos($error, 'already exists') === false &&
+                        strpos($error, 'Duplicate') === false
+                    ) {
+                        $this->db->execute('SET FOREIGN_KEY_CHECKS = 1');
                         throw $e;
                     }
                 }
             }
         }
-        
-        $this->realDb->execute('SET FOREIGN_KEY_CHECKS = 1');
+
+        $this->db->execute('SET FOREIGN_KEY_CHECKS = 1');
     }
 
     private function cleanup(): void
     {
         $tables = ['bundle_options', 'options', 'option_groups', 'bundles', 'items'];
-        $this->realDb->execute('SET FOREIGN_KEY_CHECKS = 0');
+        $this->db->execute('SET FOREIGN_KEY_CHECKS = 0');
         foreach ($tables as $table) {
             try {
-                $this->realDb->execute("TRUNCATE TABLE `$table`");
+                $this->db->execute("TRUNCATE TABLE `$table`");
             } catch (Exception $e) {
                 // Table might not exist, ignore
             }
         }
-        $this->realDb->execute('SET FOREIGN_KEY_CHECKS = 1');
+        $this->db->execute('SET FOREIGN_KEY_CHECKS = 1');
     }
 
     public function testConstructorWithMysqli()
     {
-        // We can't easily test with real mysqli, so we'll test the exception path
-        // when invalid config is passed
+        // Test constructor with mysqli instance
+        $connection = mysqli_connect('test_mysql', 'testuser', 'testpass', 'test_shop');
+        if (!$connection) {
+            $this->markTestSkipped('Could not connect to test database');
+        }
+
+        $db = new Db($connection);
+        $this->assertInstanceOf(Db::class, $db);
+
+        // Test that it works
+        $result = $db->fetchAll("SELECT 1 as test");
+        $this->assertIsArray($result);
+        $this->assertCount(1, $result);
+    }
+
+    public function testConstructorWithInvalidArgument()
+    {
+        // Test exception path when invalid config is passed
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Constructor requires mysqli or ConfigInterface');
 
@@ -132,10 +150,10 @@ class DbTest extends TestCase
     public function testFetchAllWithoutParams()
     {
         // Insert test data
-        $this->realDb->execute("INSERT INTO items (item_id, name, min_porto) VALUES (1, 'Test', 0)");
-        $this->realDb->execute("INSERT INTO items (item_id, name, min_porto) VALUES (2, 'Test2', 0)");
+        $this->db->execute("INSERT INTO items (item_id, name, min_porto) VALUES (1, 'Test', 0)");
+        $this->db->execute("INSERT INTO items (item_id, name, min_porto) VALUES (2, 'Test2', 0)");
 
-        $result = $this->realDb->fetchAll("SELECT * FROM items");
+        $result = $this->db->fetchAll("SELECT * FROM items");
 
         $this->assertIsArray($result);
         $this->assertCount(2, $result);
@@ -145,9 +163,9 @@ class DbTest extends TestCase
     public function testFetchAllWithParams()
     {
         // Insert test data
-        $this->realDb->execute("INSERT INTO items (item_id, name, min_porto) VALUES (?, ?, ?)", [1, 'Test', 0]);
+        $this->db->execute("INSERT INTO items (item_id, name, min_porto) VALUES (?, ?, ?)", [1, 'Test', 0]);
 
-        $result = $this->realDb->fetchAll("SELECT * FROM items WHERE item_id = ?", [1]);
+        $result = $this->db->fetchAll("SELECT * FROM items WHERE item_id = ?", [1]);
 
         $this->assertIsArray($result);
         $this->assertCount(1, $result);
@@ -161,7 +179,7 @@ class DbTest extends TestCase
         $this->expectException(Exception::class);
 
         try {
-            $this->realDb->fetchAll("SELECT * FROM items WHERE item_id = ? INVALID SQL", [1]);
+            $this->db->fetchAll("SELECT * FROM items WHERE item_id = ? INVALID SQL", [1]);
         } catch (Exception $e) {
             // Should be either RuntimeException or mysqli_sql_exception
             $this->assertContains(get_class($e), [RuntimeException::class, 'mysqli_sql_exception']);
@@ -178,18 +196,18 @@ class DbTest extends TestCase
     public function testFetchAllWithParamsThrowsOnExecuteFailure()
     {
         // Set up test data
-        $this->realDb->execute("INSERT INTO items (item_id, name, min_porto) VALUES (?, ?, ?)", [1, 'Test Item', 0]);
+        $this->db->execute("INSERT INTO items (item_id, name, min_porto) VALUES (?, ?, ?)", [1, 'Test Item', 0]);
 
         // Set up option_groups and options for bundle_options
-        $this->realDb->execute("INSERT INTO option_groups (option_group_id, name, display_order) VALUES (?, ?, ?)", [1, 'Default', 0]);
-        $this->realDb->execute("INSERT INTO options (option_id, option_group_id, name, display_order, description) VALUES (?, ?, ?, ?, ?)", [1, 1, 'Default', 0, null]);
+        $this->db->execute("INSERT INTO option_groups (option_group_id, name, display_order) VALUES (?, ?, ?)", [1, 'Default', 0]);
+        $this->db->execute("INSERT INTO options (option_id, option_group_id, name, display_order, description) VALUES (?, ?, ?, ?, ?)", [1, 1, 'Default', 0, null]);
 
         // Try to insert a bundle_option with invalid bundle_id (will fail foreign key constraint)
         // This will cause execute() to fail during the INSERT
         $this->expectException(Exception::class);
 
         try {
-            $this->realDb->execute(
+            $this->db->execute(
                 "INSERT INTO bundle_options (bundle_id, option_id, price, min_count, max_count, inventory) VALUES (?, ?, ?, ?, ?, ?)",
                 [999, 1, 100.0, 1, 10, 20]
             );
@@ -209,44 +227,44 @@ class DbTest extends TestCase
     public function testFetchAllWithDifferentParamTypes()
     {
         // Insert test data
-        $this->realDb->execute("INSERT INTO items (item_id, name, min_porto) VALUES (?, ?, ?)", [1, 'test', 10.5]);
+        $this->db->execute("INSERT INTO items (item_id, name, min_porto) VALUES (?, ?, ?)", [1, 'test', 10.5]);
 
         // Test with int
-        $result = $this->realDb->fetchAll("SELECT * FROM items WHERE item_id = ?", [1]);
+        $result = $this->db->fetchAll("SELECT * FROM items WHERE item_id = ?", [1]);
         $this->assertCount(1, $result);
 
         // Test with float
-        $result = $this->realDb->fetchAll("SELECT * FROM items WHERE min_porto = ?", [10.5]);
+        $result = $this->db->fetchAll("SELECT * FROM items WHERE min_porto = ?", [10.5]);
         $this->assertCount(1, $result);
 
         // Test with string
-        $result = $this->realDb->fetchAll("SELECT * FROM items WHERE name = ?", ['test']);
+        $result = $this->db->fetchAll("SELECT * FROM items WHERE name = ?", ['test']);
         $this->assertCount(1, $result);
 
         // Test with mixed types
-        $result = $this->realDb->fetchAll("SELECT * FROM items WHERE item_id = ? AND min_porto = ? AND name = ?", [1, 10.5, 'test']);
+        $result = $this->db->fetchAll("SELECT * FROM items WHERE item_id = ? AND min_porto = ? AND name = ?", [1, 10.5, 'test']);
         $this->assertCount(1, $result);
     }
 
     public function testExecuteWithoutParams()
     {
-        $result = $this->realDb->execute("INSERT INTO items (name, min_porto) VALUES ('test', 0)");
+        $result = $this->db->execute("INSERT INTO items (name, min_porto) VALUES ('test', 0)");
 
         $this->assertTrue($result);
 
         // Verify the insert worked
-        $data = $this->realDb->fetchAll("SELECT * FROM items WHERE name = 'test'");
+        $data = $this->db->fetchAll("SELECT * FROM items WHERE name = 'test'");
         $this->assertCount(1, $data);
     }
 
     public function testExecuteWithParams()
     {
-        $result = $this->realDb->execute("INSERT INTO items (name, min_porto) VALUES (?, ?)", ['test', 0]);
+        $result = $this->db->execute("INSERT INTO items (name, min_porto) VALUES (?, ?)", ['test', 0]);
 
         $this->assertTrue($result);
 
         // Verify the insert worked
-        $data = $this->realDb->fetchAll("SELECT * FROM items WHERE name = 'test'");
+        $data = $this->db->fetchAll("SELECT * FROM items WHERE name = 'test'");
         $this->assertCount(1, $data);
     }
 
@@ -256,7 +274,7 @@ class DbTest extends TestCase
         $this->expectException(Exception::class);
 
         try {
-            $this->realDb->execute("INSERT INTO items (name, min_porto) VALUES (?) INVALID SQL", ['test']);
+            $this->db->execute("INSERT INTO items (name, min_porto) VALUES (?) INVALID SQL", ['test']);
         } catch (Exception $e) {
             // Should be either RuntimeException or mysqli_sql_exception
             $this->assertContains(get_class($e), [RuntimeException::class, 'mysqli_sql_exception']);
@@ -273,61 +291,61 @@ class DbTest extends TestCase
     public function testExec()
     {
         // Insert test data first
-        $this->realDb->execute("INSERT INTO items (item_id, name, min_porto) VALUES (?, ?, ?)", [1, 'test', 0]);
+        $this->db->execute("INSERT INTO items (item_id, name, min_porto) VALUES (?, ?, ?)", [1, 'test', 0]);
 
         // exec() is deprecated, use execute() instead
-        $this->realDb->execute("DELETE FROM items WHERE item_id = ?", [1]);
+        $this->db->execute("DELETE FROM items WHERE item_id = ?", [1]);
 
         // Verify deletion worked
-        $data = $this->realDb->fetchAll("SELECT * FROM items WHERE item_id = ?", [1]);
+        $data = $this->db->fetchAll("SELECT * FROM items WHERE item_id = ?", [1]);
         $this->assertCount(0, $data);
     }
 
     public function testBeginTransaction()
     {
-        $result = $this->realDb->beginTransaction();
+        $result = $this->db->beginTransaction();
         $this->assertTrue($result);
 
         // Clean up
-        $this->realDb->rollback();
+        $this->db->rollback();
     }
 
     public function testCommit()
     {
-        $this->realDb->beginTransaction();
-        $this->realDb->execute("INSERT INTO items (name, min_porto) VALUES ('test', 0)");
-        $result = $this->realDb->commit();
+        $this->db->beginTransaction();
+        $this->db->execute("INSERT INTO items (name, min_porto) VALUES ('test', 0)");
+        $result = $this->db->commit();
 
         $this->assertTrue($result);
 
         // Verify commit worked
-        $data = $this->realDb->fetchAll("SELECT * FROM items WHERE name = 'test'");
+        $data = $this->db->fetchAll("SELECT * FROM items WHERE name = 'test'");
         $this->assertCount(1, $data);
     }
 
     public function testRollback()
     {
-        $this->realDb->beginTransaction();
-        $this->realDb->execute("INSERT INTO items (name, min_porto) VALUES ('test', 0)");
-        $result = $this->realDb->rollback();
+        $this->db->beginTransaction();
+        $this->db->execute("INSERT INTO items (name, min_porto) VALUES ('test', 0)");
+        $result = $this->db->rollback();
 
         $this->assertTrue($result);
 
         // Verify rollback worked (data should not be committed)
-        $data = $this->realDb->fetchAll("SELECT * FROM items WHERE name = 'test'");
+        $data = $this->db->fetchAll("SELECT * FROM items WHERE name = 'test'");
         $this->assertCount(0, $data);
     }
 
     public function testLastInsertId()
     {
-        $this->realDb->execute("INSERT INTO items (name, min_porto) VALUES ('test', 0)");
-        $insertId = $this->realDb->lastInsertId();
+        $this->db->execute("INSERT INTO items (name, min_porto) VALUES ('test', 0)");
+        $insertId = $this->db->lastInsertId();
 
         $this->assertIsInt($insertId);
         $this->assertGreaterThan(0, $insertId);
 
         // Verify we can retrieve the inserted record
-        $data = $this->realDb->fetchAll("SELECT * FROM items WHERE item_id = ?", [$insertId]);
+        $data = $this->db->fetchAll("SELECT * FROM items WHERE item_id = ?", [$insertId]);
         $this->assertCount(1, $data);
         $this->assertEquals('test', $data[0]['name']);
     }
@@ -351,9 +369,9 @@ class DbTest extends TestCase
     public function testFetchAllWithNullValues()
     {
         // Insert data with NULL values
-        $this->realDb->execute("INSERT INTO items (item_id, name, picture, description, min_porto) VALUES (?, ?, NULL, NULL, ?)", [1, 'Test', 0]);
+        $this->db->execute("INSERT INTO items (item_id, name, picture, description, min_porto) VALUES (?, ?, NULL, NULL, ?)", [1, 'Test', 0]);
 
-        $result = $this->realDb->fetchAll("SELECT * FROM items WHERE item_id = ?", [1]);
+        $result = $this->db->fetchAll("SELECT * FROM items WHERE item_id = ?", [1]);
         $this->assertCount(1, $result);
         $this->assertNull($result[0]['picture']);
         $this->assertNull($result[0]['description']);
@@ -362,7 +380,7 @@ class DbTest extends TestCase
     public function testExecuteWithNullParams()
     {
         // Test execute with NULL parameter
-        $result = $this->realDb->execute(
+        $result = $this->db->execute(
             "INSERT INTO items (name, picture, description, min_porto) VALUES (?, NULL, NULL, ?)",
             ['Test Item', 0]
         );
@@ -370,7 +388,7 @@ class DbTest extends TestCase
         $this->assertTrue($result);
 
         // Verify the insert worked
-        $data = $this->realDb->fetchAll("SELECT * FROM items WHERE name = ?", ['Test Item']);
+        $data = $this->db->fetchAll("SELECT * FROM items WHERE name = ?", ['Test Item']);
         $this->assertCount(1, $data);
         $this->assertNull($data[0]['picture']);
     }
@@ -378,7 +396,7 @@ class DbTest extends TestCase
     public function testFetchAllWithEmptyResult()
     {
         // Test fetchAll with query that returns no results
-        $result = $this->realDb->fetchAll("SELECT * FROM items WHERE item_id = ?", [99999]);
+        $result = $this->db->fetchAll("SELECT * FROM items WHERE item_id = ?", [99999]);
         $this->assertIsArray($result);
         $this->assertCount(0, $result);
     }
@@ -386,13 +404,13 @@ class DbTest extends TestCase
     public function testFetchAllWithComplexQuery()
     {
         // Set up complex data
-        $this->realDb->execute("INSERT INTO items (item_id, name, min_porto) VALUES (?, ?, ?)", [1, 'Item 1', 5.0]);
-        $this->realDb->execute("INSERT INTO items (item_id, name, min_porto) VALUES (?, ?, ?)", [2, 'Item 2', 10.0]);
-        $this->realDb->execute("INSERT INTO bundles (bundle_id, item_id, name) VALUES (?, ?, ?)", [10, 1, 'Bundle 1']);
-        $this->realDb->execute("INSERT INTO bundles (bundle_id, item_id, name) VALUES (?, ?, ?)", [20, 2, 'Bundle 2']);
+        $this->db->execute("INSERT INTO items (item_id, name, min_porto) VALUES (?, ?, ?)", [1, 'Item 1', 5.0]);
+        $this->db->execute("INSERT INTO items (item_id, name, min_porto) VALUES (?, ?, ?)", [2, 'Item 2', 10.0]);
+        $this->db->execute("INSERT INTO bundles (bundle_id, item_id, name) VALUES (?, ?, ?)", [10, 1, 'Bundle 1']);
+        $this->db->execute("INSERT INTO bundles (bundle_id, item_id, name) VALUES (?, ?, ?)", [20, 2, 'Bundle 2']);
 
         // Test complex JOIN query
-        $result = $this->realDb->fetchAll(
+        $result = $this->db->fetchAll(
             "SELECT i.item_id, i.name, b.bundle_id, b.name as bundle_name 
              FROM items i 
              LEFT JOIN bundles b ON i.item_id = b.item_id 
@@ -403,6 +421,23 @@ class DbTest extends TestCase
         $this->assertIsArray($result);
         $this->assertGreaterThan(0, count($result));
         $this->assertEquals('Item 1', $result[0]['name']);
+    }
+
+    public function testFetchAllWithInvalidQueryReturnsEmptyArray()
+    {
+        // Test fetchAll with a valid query that returns no results
+        // This tests the path where query() succeeds but returns no rows
+        $result = $this->db->fetchAll("SELECT * FROM items WHERE item_id = ?", [99999]);
+        $this->assertIsArray($result);
+        $this->assertCount(0, $result);
+    }
+
+    public function testFetchAllWithInvalidTableThrowsException()
+    {
+        // Test that fetchAll throws exception when querying non-existent table
+        $this->expectException(Exception::class);
+
+        $this->db->fetchAll("SELECT * FROM nonexistent_table_12345");
     }
 }
 

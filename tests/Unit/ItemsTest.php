@@ -516,4 +516,35 @@ class ItemsTest extends TestCase
         $bundleOption = $this->dbHelper->getData('bundle_options', 'bundle_option_id = 100')[0];
         $this->assertEquals(20, $bundleOption['inventory']);
     }
+
+    public function testOrderItemWithMissingBundleOptionId()
+    {
+        // Test orderItem with missing bundle_option_id (validation should catch this)
+        $this->dbHelper->insertData([
+            'items' => [
+                ['item_id' => 1, 'name' => 'Test Item', 'min_porto' => 0]
+            ],
+            'bundles' => [
+                ['bundle_id' => 1, 'item_id' => 1, 'name' => 'Test Bundle']
+            ],
+            'option_groups' => [
+                ['option_group_id' => 1, 'name' => 'Default', 'display_order' => 0]
+            ],
+            'options' => [
+                ['option_id' => 1, 'option_group_id' => 1, 'name' => 'Default', 'display_order' => 0, 'description' => null]
+            ],
+            'bundle_options' => [
+                ['bundle_option_id' => 100, 'bundle_id' => 1, 'option_id' => 1, 'price' => 10.0, 'min_count' => 1, 'max_count' => 10, 'inventory' => 20]
+            ]
+        ]);
+
+        // Test with missing bundle_option_id
+        $orders = [
+            ['amount' => 5]  // Missing bundle_option_id
+        ];
+
+        // This should return false because validation fails
+        $result = $this->items->orderItem($orders);
+        $this->assertFalse($result);
+    }
 }
