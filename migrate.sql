@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 --- version 1
-=======
-## version 1
->>>>>>> 625739b (upgade to php 8.4 and mysql 8.4)
 
 CREATE TABLE IF NOT EXISTS `items` (
     `item_id` INT UNSIGNED AUTO_INCREMENT,
@@ -19,8 +15,8 @@ CREATE TABLE IF NOT EXISTS `bundles` (
     `name` VARCHAR(256) NOT NULL COMMENT "subtitle",
     `price` DECIMAL(10, 2) DEFAULT 0 COMMENT "price per item",
     `min_count` INT DEFAULT 0 COMMENT "min amount to buy",
-    `max_count` INT DEFAULT 1  COMMENT "max amount to buy",
-    `inventory` INT DEFAULT 0  COMMENT "items left in stock",
+    `max_count` INT DEFAULT 1 COMMENT "max amount to buy",
+    `inventory` INT DEFAULT 0 COMMENT "items left in stock",
     PRIMARY KEY (`bundle_id`),
     KEY (`item_id`),
     CONSTRAINT `fk_item_id` FOREIGN KEY `fk_item_id` (`item_id`) REFERENCES `items` (`item_id`) ON DELETE RESTRICT ON UPDATE CASCADE
@@ -53,6 +49,10 @@ CREATE TABLE IF NOT EXISTS `bundle_options` (
     `bundle_option_id` INT UNSIGNED AUTO_INCREMENT,
     `bundle_id` INT UNSIGNED NOT NULL COMMENT "bundles.bundle_id",
     `option_id` INT UNSIGNED NOT NULL COMMENT "options.option_id",
+    `price` DECIMAL(10, 2) DEFAULT NULL COMMENT "override price per item for this bundle+option",
+    `min_count` INT DEFAULT NULL COMMENT "override min amount to buy for this bundle+option",
+    `max_count` INT DEFAULT NULL COMMENT "override max amount to buy for this bundle+option",
+    `inventory` INT DEFAULT NULL COMMENT "inventory for this bundle+option (if NULL, falls back to bundle)",
     PRIMARY KEY (`bundle_option_id`),
     KEY (`bundle_id`),
     KEY (`option_id`),

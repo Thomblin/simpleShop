@@ -24,6 +24,7 @@ class Config
     public $mysqlDatabase = 'shop';
 
     public $language = 'de';
+    public $showInventory = false;
 }
 
 

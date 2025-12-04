@@ -1,50 +1,45 @@
 <?php
 
-if (!function_exists('json_encode'))
-{
+if (!function_exists('json_encode')) {
     /**
      * @param bool|array $a
      * @return string
      */
-    function json_encode($a=false)
+    function json_encode($a = false)
     {
-        if (is_null($a)) return 'null';
-        if ($a === false) return 'false';
-        if ($a === true) return 'true';
-        if (is_scalar($a))
-        {
-            if (is_float($a))
-            {
+        if (is_null($a))
+            return 'null';
+        if ($a === false)
+            return 'false';
+        if ($a === true)
+            return 'true';
+        if (is_scalar($a)) {
+            if (is_float($a)) {
                 // Always use "." for floats.
                 return floatval(str_replace(",", ".", strval($a)));
             }
 
-            if (is_string($a))
-            {
+            if (is_string($a)) {
                 static $jsonReplaces = array(array("\\", "/", "\n", "\t", "\r", "\b", "\f", '"'), array('\\\\', '\\/', '\\n', '\\t', '\\r', '\\b', '\\f', '\"'));
                 return '"' . str_replace($jsonReplaces[0], $jsonReplaces[1], $a) . '"';
-            }
-            else
+            } else
                 return $a;
         }
         $isList = true;
-        for ($i = 0, reset($a); $i < count($a); $i++, next($a))
-        {
-            if (key($a) !== $i)
-            {
+        for ($i = 0, reset($a); $i < count($a); $i++, next($a)) {
+            if (key($a) !== $i) {
                 $isList = false;
                 break;
             }
         }
         $result = array();
-        if ($isList)
-        {
-            foreach ($a as $v) $result[] = json_encode($v);
+        if ($isList) {
+            foreach ($a as $v)
+                $result[] = json_encode($v);
             return '[' . join(',', $result) . ']';
-        }
-        else
-        {
-            foreach ($a as $k => $v) $result[] = json_encode($k).':'.json_encode($v);
+        } else {
+            foreach ($a as $k => $v)
+                $result[] = json_encode($k) . ':' . json_encode($v);
             return '{' . join(',', $result) . '}';
         }
     }
@@ -72,61 +67,176 @@ foreach ($config->allowedTextfields as $name => $required) {
         $error['req'] = t('error.fill_required');
     }
 }
+
 $selected_items = array();
 $orders = array();
 $anyOutOfStock = false;
 $porto = 0;
 
 foreach ($shopItems as $item) {
-    if (isset($_POST[$item['item_id']])) {
-        foreach ($item['bundles'] as $bundle) {
-            if (isset($_POST[$item['item_id']][$bundle['bundle_id']])) {
-                $amount = (int)$_POST[$item['item_id']][$bundle['bundle_id']];
-                $amount = max($amount, $bundle['min_count']);
-                $amount = min($amount, $bundle['max_count']);
+    if (!isset($_POST[$item['item_id']])) {
+        continue;
+    }
 
-                $outOfStock = $bundle['inventory'] < $amount;
+    // Determine selected option per group for this item
+    $selectedOptionByGroup = [];
+    if (!empty($item['option_groups'])) {
+        foreach ($item['option_groups'] as $group) {
+            $fieldName = 'item_' . $item['item_id'] . '_option_' . $group['group_id'];
+            if (isset($_POST[$fieldName]) && $_POST[$fieldName] !== '') {
+                $selectedOptionByGroup[$group['group_id']] = (int) $_POST[$fieldName];
+            }
+        }
+    }
 
+    foreach ($item['bundles'] as $bundle) {
+        if (!isset($_POST[$item['item_id']][$bundle['bundle_id']])) {
+            continue;
+        }
+
+        $postValue = $_POST[$item['item_id']][$bundle['bundle_id']];
+
+        // If new nested structure (bundle_option_id => amount)
+        if (is_array($postValue)) {
+            foreach ($postValue as $boId => $rawAmount) {
+                $amount = (int) $rawAmount;
+
+                // Find exact option by bundle_option_id
+                $effective = [
+                    'price' => (float) $bundle['price'],
+                    'min_count' => (int) $bundle['min_count'],
+                    'max_count' => (int) $bundle['max_count'],
+                    'inventory' => (int) $bundle['inventory'],
+                    'bundle_option_id' => (int) $boId,
+                    'option_description' => null
+                ];
+
+                if (!empty($item['option_groups'])) {
+                    foreach ($item['option_groups'] as $group) {
+                        foreach ($group['options'] as $opt) {
+                            if ($opt['bundle_id'] == $bundle['bundle_id'] && isset($opt['bundle_option_id']) && (int) $opt['bundle_option_id'] === (int) $boId) {
+                                $effective['price'] = (float) $opt['price'];
+                                $effective['min_count'] = (int) $opt['min_count'];
+                                $effective['max_count'] = (int) $opt['max_count'];
+                                $effective['inventory'] = (int) $opt['inventory'];
+                                $effective['option_description'] = !empty($opt['option_description']) ? $opt['option_description'] : $opt['option_name'];
+                                break 2;
+                            }
+                        }
+                    }
+                }
+
+                // Apply limits and stock checks
+                $amount = max($amount, $effective['min_count']);
+                $amount = min($amount, $effective['max_count']);
+
+                $outOfStock = $effective['inventory'] < $amount;
                 if ($outOfStock) {
                     $anyOutOfStock = true;
                 }
 
-                if (0 < $amount) {
-                    $price += $amount * $bundle['price'];
-
+                if ($amount > 0) {
+                    $price += $amount * $effective['price'];
                     $selected_items[] = array(
                         'name' => $item['name'],
-                        'bundle' => $bundle['name'],
-                        'amount' => min($amount, $bundle['inventory']),
-                        'price' => min($amount, $bundle['inventory']) * $bundle['price'],
+                        'bundle' => $bundle['name'] . (!empty($effective['option_description']) ? ' - ' . $effective['option_description'] : ''),
+                        'amount' => min($amount, $effective['inventory']),
+                        'price' => min($amount, $effective['inventory']) * $effective['price'],
                         'out_of_stock' => $outOfStock
                     );
                     $porto = max($porto, $item['min_porto']);
 
                     $orders[] = [
-                      'amount' => $amount,
-                      'bundle_id' => $bundle['bundle_id']
+                        'amount' => $amount,
+                        'bundle_option_id' => (int) $boId
                     ];
                 }
+            }
+        } else {
+            // Legacy scalar structure
+            $amount = (int) $postValue;
+
+            // Default to bundle-level attributes
+            $effective = [
+                'price' => (float) $bundle['price'],
+                'min_count' => (int) $bundle['min_count'],
+                'max_count' => (int) $bundle['max_count'],
+                'inventory' => (int) $bundle['inventory'],
+                'bundle_option_id' => null,
+                'option_description' => null
+            ];
+
+            // Try to find a matching selected option for this bundle to override values
+            if (!empty($item['option_groups'])) {
+                foreach ($item['option_groups'] as $group) {
+                    $selectedOptionId = isset($selectedOptionByGroup[$group['group_id']]) ? $selectedOptionByGroup[$group['group_id']] : null;
+                    if (!$selectedOptionId) {
+                        continue;
+                    }
+
+                    foreach ($group['options'] as $opt) {
+                        if ($opt['bundle_id'] == $bundle['bundle_id'] && $opt['option_id'] == $selectedOptionId) {
+                            $effective['price'] = (float) $opt['price'];
+                            $effective['min_count'] = (int) $opt['min_count'];
+                            $effective['max_count'] = (int) $opt['max_count'];
+                            $effective['inventory'] = (int) $opt['inventory'];
+                            $effective['bundle_option_id'] = isset($opt['bundle_option_id']) ? (int) $opt['bundle_option_id'] : null;
+                            $effective['option_description'] = !empty($opt['option_description']) ? $opt['option_description'] : $opt['option_name'];
+                            break 2; // Found matching option for this bundle
+                        }
+                    }
+                }
+            }
+
+            // Apply min/max and stock checks with effective values
+            $amount = max($amount, $effective['min_count']);
+            $amount = min($amount, $effective['max_count']);
+
+            $outOfStock = $effective['inventory'] < $amount;
+            if ($outOfStock) {
+                $anyOutOfStock = true;
+            }
+
+            if ($amount > 0) {
+                $price += $amount * $effective['price'];
+
+                $selected_items[] = array(
+                    'name' => $item['name'],
+                    'bundle' => $bundle['name'] . (!empty($effective['option_description']) ? ' - ' . $effective['option_description'] : ''),
+                    'amount' => min($amount, $effective['inventory']),
+                    'price' => min($amount, $effective['inventory']) * $effective['price'],
+                    'out_of_stock' => $outOfStock
+                );
+
+                $porto = max($porto, $item['min_porto']);
+
+                $order = ['amount' => $amount];
+                if (!empty($effective['bundle_option_id'])) {
+                    $order['bundle_option_id'] = $effective['bundle_option_id'];
+                } else {
+                    $order['bundle_id'] = $bundle['bundle_id'];
+                }
+                $orders[] = $order;
             }
         }
     }
 }
+
 $mail->add('selected_items', $selected_items);
 
-if ( isset($_POST['collectionByTheCustomer']) ) {
+if (isset($_POST['collectionByTheCustomer'])) {
     $porto = 0;
 }
 
 $price += $porto;
-$result['price'] = number_format($price, 2, ',', '.') . ' '.Config::CURRENCY;
-$result['porto'] = number_format($porto, 2, ',', '.') . ' '.Config::CURRENCY;
+$result['price'] = number_format($price, 2, ',', '.') . ' ' . Config::CURRENCY;
+$result['porto'] = number_format($porto, 2, ',', '.') . ' ' . Config::CURRENCY;
 $result['order'] = $anyOutOfStock ? 0 : 1;
 
 if (!isset($_GET['price_only'])) {
     $mail->add('porto', $result['porto']);
     $mail->add('total', $result['price']);
-    if ( isset($_POST['collectionByTheCustomer']) ) {
+    if (isset($_POST['collectionByTheCustomer'])) {
         $mail->add('collectionByTheCustomer', true);
     }
 
@@ -159,7 +269,8 @@ if (isset($_GET['mail']) && !isset($result['error'])) {
 
         mail_utf8(Config::MAIL_ADDRESS, Config::MAIL_USER, Config::MAIL_ADDRESS, t('mail.subject'), $text);
         mail_utf8($_POST['email'], Config::MAIL_USER, Config::MAIL_ADDRESS, t('mail.subject'), $text);
-    };
+    }
+    ;
 }
 
 echo json_encode($result);
