@@ -1,0 +1,189 @@
+<?php
+
+use PHPUnit\Framework\TestCase;
+
+class TemplateTest extends TestCase
+{
+    private $templatePath;
+
+    protected function setUp(): void
+    {
+        $this->templatePath = __DIR__ . '/../fixtures/';
+    }
+
+    public function testImplementsTemplateInterface()
+    {
+        $template = new Template();
+        $this->assertInstanceOf(TemplateInterface::class, $template);
+    }
+
+    public function testAddSetsData()
+    {
+        $template = new Template();
+        $template->add('key', 'value');
+
+        $data = $template->getData();
+        $this->assertEquals('value', $data['key']);
+    }
+
+    public function testAddMultipleValues()
+    {
+        $template = new Template();
+        $template->add('name', 'John');
+        $template->add('age', 30);
+
+        $data = $template->getData();
+        $this->assertEquals('John', $data['name']);
+        $this->assertEquals(30, $data['age']);
+    }
+
+    public function testParseRendersTemplate()
+    {
+        $template = new Template($this->templatePath);
+        $template->add('name', 'John');
+        $template->add('total', '100.00 €');
+
+        $result = $template->parse('test_template.php', false);
+
+        $this->assertStringContainsString('Hello John!', $result);
+        $this->assertStringContainsString('100.00 €', $result);
+    }
+
+    public function testParseWithPrintReturnsEmpty()
+    {
+        $template = new Template($this->templatePath);
+        $template->add('name', 'John');
+        $template->add('total', '100.00 €');
+
+        ob_start();
+        $result = $template->parse('test_template.php', true);
+        $output = ob_get_clean();
+
+        $this->assertEquals('', $result);
+        $this->assertStringContainsString('Hello John!', $output);
+    }
+
+    public function testValidateFilePathThrowsExceptionForNonexistent()
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Template file not found');
+
+        $template = new Template($this->templatePath);
+        $template->parse('nonexistent.php', false);
+    }
+
+    public function testValidateFilePathPreventsDirectoryTraversal()
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Template file outside allowed directory');
+
+        $template = new Template($this->templatePath);
+        // Try to access a file outside the base path
+        $template->parse('../../../etc/passwd', false);
+    }
+
+    public function testConstructorWithCustomBasePath()
+    {
+        $template = new Template($this->templatePath);
+        $template->add('name', 'Test');
+        $template->add('total', '50.00 €');
+
+        $result = $template->parse('test_template.php', false);
+        $this->assertStringContainsString('Hello Test!', $result);
+    }
+
+    public function testGetDataReturnsAllData()
+    {
+        $template = new Template();
+        $template->add('key1', 'value1');
+        $template->add('key2', 'value2');
+
+        $data = $template->getData();
+
+        $this->assertIsArray($data);
+        $this->assertCount(2, $data);
+        $this->assertEquals('value1', $data['key1']);
+        $this->assertEquals('value2', $data['key2']);
+    }
+
+    public function testParseExtractsVariables()
+    {
+        $template = new Template($this->templatePath);
+        $template->add('name', 'Alice');
+        $template->add('total', '200.00 €');
+
+        $result = $template->parse('test_template.php', false);
+
+        // Verify variables were extracted and used
+        $this->assertStringNotContainsString('<?php', $result);
+        $this->assertStringContainsString('Alice', $result);
+        $this->assertStringContainsString('200.00', $result);
+    }
+
+    public function testValidateFilePathWithAbsolutePath()
+    {
+        $template = new Template($this->templatePath);
+        $template->add('name', 'Test');
+        $template->add('total', '100.00 €');
+        
+        // Test with absolute path to existing file
+        $absolutePath = realpath($this->templatePath . 'test_template.php');
+        $result = $template->parse($absolutePath, false);
+        
+        $this->assertStringContainsString('Hello Test!', $result);
+    }
+
+    public function testValidateFilePathPreventsDirectoryTraversalWithMixedSlashes()
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Template file outside allowed directory');
+        
+        $template = new Template($this->templatePath);
+        // Try with mixed forward/backward slashes
+        $template->parse('..\\..\\etc\\passwd', false);
+    }
+
+    public function testValidateFilePathPreventsDirectoryTraversalWithEncodedPath()
+    {
+        $this->expectException(InvalidArgumentException::class);
+        
+        $template = new Template($this->templatePath);
+        // Try with encoded path traversal
+        $template->parse('..%2F..%2Fetc%2Fpasswd', false);
+    }
+
+    public function testValidateFilePathHandlesCurrentDirectoryReference()
+    {
+        $template = new Template($this->templatePath);
+        $template->add('name', 'Test');
+        $template->add('total', '100.00 €');
+        
+        // Test with ./ prefix (should be normalized)
+        $result = $template->parse('./test_template.php', false);
+        
+        $this->assertStringContainsString('Hello Test!', $result);
+    }
+
+    public function testValidateFilePathWithRealPathOutsideBase()
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Template file outside allowed directory');
+        
+        // Create a template with a base path
+        $basePath = sys_get_temp_dir() . '/template_test_' . uniqid() . '/';
+        mkdir($basePath, 0777, true);
+        
+        $template = new Template($basePath);
+        
+        // Try to access a file outside (using realpath check)
+        // This tests the final realpath check in validateFilePath
+        try {
+            $template->parse(__FILE__, false); // Try to access this test file
+        } catch (InvalidArgumentException $e) {
+            rmdir($basePath);
+            throw $e;
+        }
+        
+        rmdir($basePath);
+    }
+}

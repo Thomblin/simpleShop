@@ -1,0 +1,75 @@
+<?php
+
+/**
+ * Service for calculating prices and shipping costs
+ */
+class PriceCalculator
+{
+    /**
+     * @var string
+     */
+    private $currency;
+
+    /**
+     * PriceCalculator constructor.
+     *
+     * @param string $currency Currency symbol (default: '€')
+     */
+    public function __construct($currency = '€')
+    {
+        $this->currency = $currency;
+    }
+
+    /**
+     * Calculate shipping cost based on items
+     *
+     * @param array $items Array of items with min_porto values
+     * @param bool $collectionByCustomer Whether customer will collect
+     * @return float Shipping cost
+     */
+    public function calculatePorto(array $items, $collectionByCustomer = false)
+    {
+        if ($collectionByCustomer) {
+            return 0.0;
+        }
+
+        $porto = 0.0;
+
+        foreach ($items as $item) {
+            if (isset($item['min_porto'])) {
+                $porto = max($porto, (float)$item['min_porto']);
+            }
+        }
+
+        return $porto;
+    }
+
+    /**
+     * Calculate total price from order items
+     *
+     * @param OrderItem[] $items
+     * @param float $porto Shipping cost
+     * @return PriceResult
+     */
+    public function calculateTotal(array $items, $porto)
+    {
+        $subtotal = 0.0;
+
+        foreach ($items as $item) {
+            $subtotal += $item->totalPrice;
+        }
+
+        return new PriceResult($subtotal, $porto, $this->currency);
+    }
+
+    /**
+     * Format a price value
+     *
+     * @param float $price
+     * @return string Formatted price with currency
+     */
+    public function formatPrice($price)
+    {
+        return number_format($price, 2, ',', '.') . ' ' . $this->currency;
+    }
+}

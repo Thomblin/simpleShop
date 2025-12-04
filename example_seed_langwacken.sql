@@ -38,10 +38,10 @@ CREATE TABLE `bundle_options` (
     `bundle_option_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
     `bundle_id` int(10) unsigned NOT NULL COMMENT 'bundles.bundle_id',
     `option_id` int(10) unsigned NOT NULL COMMENT 'options.option_id',
-    `price` decimal(10, 2) DEFAULT NULL COMMENT 'override price per item for this bundle+option',
-    `min_count` int(11) DEFAULT NULL COMMENT 'override min amount to buy for this bundle+option',
-    `max_count` int(11) DEFAULT NULL COMMENT 'override max amount to buy for this bundle+option',
-    `inventory` int(11) DEFAULT NULL COMMENT 'inventory for this bundle+option (if NULL, falls back to bundle)',
+    `price` decimal(10, 2) NOT NULL COMMENT 'price per item for this bundle+option',
+    `min_count` int(11) NOT NULL DEFAULT 0 COMMENT 'min amount to buy for this bundle+option',
+    `max_count` int(11) NOT NULL DEFAULT 1 COMMENT 'max amount to buy for this bundle+option',
+    `inventory` int(11) NOT NULL DEFAULT 0 COMMENT 'inventory for this bundle+option',
     PRIMARY KEY (`bundle_option_id`),
     KEY `bundle_id` (`bundle_id`),
     KEY `option_id` (`option_id`),
@@ -72,172 +72,172 @@ VALUES (
         1,
         1,
         1,
-        NULL,
-        NULL,
-        NULL,
-        NULL
+        50.00,
+        1,
+        10,
+        200
     ),
     (
         2,
         2,
         2,
-        NULL,
-        NULL,
-        NULL,
-        NULL
+        120.00,
+        1,
+        5,
+        150
     ),
     (
         3,
         3,
         3,
-        NULL,
-        NULL,
-        NULL,
-        NULL
+        150.00,
+        1,
+        5,
+        100
     ),
     (
         4,
         4,
         4,
-        NULL,
-        NULL,
-        NULL,
-        NULL
+        25.00,
+        1,
+        10,
+        80
     ),
     (
         5,
         5,
         5,
-        NULL,
-        NULL,
-        NULL,
-        NULL
+        25.00,
+        1,
+        10,
+        100
     ),
     (
         6,
         6,
         6,
-        NULL,
-        NULL,
-        NULL,
-        NULL
+        25.00,
+        1,
+        10,
+        100
     ),
     (
         7,
         7,
         7,
-        NULL,
-        NULL,
-        NULL,
-        NULL
+        25.00,
+        1,
+        10,
+        60
     ),
     (
         8,
         8,
         4,
-        NULL,
-        NULL,
-        NULL,
-        NULL
+        67.50,
+        1,
+        5,
+        50
     ),
     (
         9,
         9,
         5,
-        NULL,
-        NULL,
-        NULL,
-        NULL
+        67.50,
+        1,
+        5,
+        60
     ),
     (
         10,
         10,
         6,
-        NULL,
-        NULL,
-        NULL,
-        NULL
+        67.50,
+        1,
+        5,
+        60
     ),
     (
         11,
         11,
         7,
-        NULL,
-        NULL,
-        NULL,
-        NULL
+        67.50,
+        1,
+        5,
+        30
     ),
     (
         12,
         12,
         4,
-        NULL,
-        NULL,
-        NULL,
-        NULL
+        130.50,
+        1,
+        5,
+        40
     ),
     (
         13,
         13,
         5,
-        NULL,
-        NULL,
-        NULL,
-        NULL
+        130.50,
+        1,
+        5,
+        50
     ),
     (
         14,
         14,
         6,
-        NULL,
-        NULL,
-        NULL,
-        NULL
+        130.50,
+        1,
+        5,
+        50
     ),
     (
         15,
         15,
         7,
-        NULL,
-        NULL,
-        NULL,
-        NULL
+        130.50,
+        1,
+        5,
+        25
     ),
     (
         16,
         16,
         4,
-        NULL,
-        NULL,
-        NULL,
-        NULL
+        157.50,
+        1,
+        5,
+        30
     ),
     (
         17,
         17,
         5,
-        NULL,
-        NULL,
-        NULL,
-        NULL
+        157.50,
+        1,
+        5,
+        40
     ),
     (
         18,
         18,
         6,
-        NULL,
-        NULL,
-        NULL,
-        NULL
+        157.50,
+        1,
+        5,
+        40
     ),
     (
         19,
         19,
         7,
-        NULL,
-        NULL,
-        NULL,
-        NULL
+        157.50,
+        1,
+        5,
+        20
     );
 /*!40000 ALTER TABLE `bundle_options` ENABLE KEYS */
 ;
@@ -256,10 +256,6 @@ CREATE TABLE `bundles` (
     `bundle_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
     `item_id` int(10) unsigned NOT NULL COMMENT 'items.id',
     `name` varchar(256) COLLATE utf8_bin NOT NULL COMMENT 'subtitle',
-    `price` decimal(10, 2) DEFAULT '0.00' COMMENT 'price per item',
-    `min_count` int(11) DEFAULT '0' COMMENT 'min amount to buy',
-    `max_count` int(11) DEFAULT '1' COMMENT 'max amount to buy',
-    `inventory` int(11) DEFAULT '0' COMMENT 'items left in stock',
     PRIMARY KEY (`bundle_id`),
     KEY `item_id` (`item_id`),
     CONSTRAINT `fk_item_id` FOREIGN KEY (`item_id`) REFERENCES `items` (`item_id`) ON UPDATE CASCADE
@@ -279,173 +275,97 @@ INSERT INTO
 VALUES (
         1,
         1,
-        'Thursday Pass (1 day)',
-        50.00,
-        1,
-        10,
-        200
+        'Thursday Pass (1 day)'
     ),
     (
         2,
         1,
-        'Weekend Pass (Friday + Saturday + Sunday)',
-        120.00,
-        1,
-        5,
-        150
+        'Weekend Pass (Friday + Saturday + Sunday)'
     ),
     (
         3,
         1,
-        'Full Festival Pass (Thursday - Sunday)',
-        150.00,
-        1,
-        5,
-        100
+        'Full Festival Pass (Thursday - Sunday)'
     ),
     (
         4,
         2,
-        'Size Small',
-        25.00,
-        1,
-        10,
-        80
+        'Size Small'
     ),
     (
         5,
         2,
-        'Size Medium',
-        25.00,
-        1,
-        10,
-        100
+        'Size Medium'
     ),
     (
         6,
         2,
-        'Size Large',
-        25.00,
-        1,
-        10,
-        100
+        'Size Large'
     ),
     (
         7,
         2,
-        'Size Extra Large',
-        25.00,
-        1,
-        10,
-        60
+        'Size Extra Large'
     ),
     (
         8,
         3,
-        'Size Small',
-        67.50,
-        1,
-        5,
-        50
+        'Size Small'
     ),
     (
         9,
         3,
-        'Size Medium',
-        67.50,
-        1,
-        5,
-        60
+        'Size Medium'
     ),
     (
         10,
         3,
-        'Size Large',
-        67.50,
-        1,
-        5,
-        60
+        'Size Large'
     ),
     (
         11,
         3,
-        'Size Extra Large',
-        67.50,
-        1,
-        5,
-        30
+        'Size Extra Large'
     ),
     (
         12,
         4,
-        'Size Small',
-        130.50,
-        1,
-        5,
-        40
+        'Size Small'
     ),
     (
         13,
         4,
-        'Size Medium',
-        130.50,
-        1,
-        5,
-        50
+        'Size Medium'
     ),
     (
         14,
         4,
-        'Size Large',
-        130.50,
-        1,
-        5,
-        50
+        'Size Large'
     ),
     (
         15,
         4,
-        'Size Extra Large',
-        130.50,
-        1,
-        5,
-        25
+        'Size Extra Large'
     ),
     (
         16,
         5,
-        'Size Small',
-        157.50,
-        1,
-        5,
-        30
+        'Size Small'
     ),
     (
         17,
         5,
-        'Size Medium',
-        157.50,
-        1,
-        5,
-        40
+        'Size Medium'
     ),
     (
         18,
         5,
-        'Size Large',
-        157.50,
-        1,
-        5,
-        40
+        'Size Large'
     ),
     (
         19,
         5,
-        'Size Extra Large',
-        157.50,
-        1,
-        5,
-        20
+        'Size Extra Large'
     );
 /*!40000 ALTER TABLE `bundles` ENABLE KEYS */
 ;

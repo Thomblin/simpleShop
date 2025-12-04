@@ -1,0 +1,42 @@
+{
+    "name": "simpleshop/simpleshop",
+    "description": "Simple e-commerce shop",
+    "type": "project",
+    "require": {
+        "php": ">=7.4"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^12.0"
+    },
+    "autoload": {
+        "files": [
+            "autoload.php"
+        ]
+    },
+    "scripts": {
+        "test": "phpunit --testdox",
+        "test-coverage": "phpunit --coverage-html coverage",
+        "test-unit": "phpunit --testsuite Unit",
+        "test-integration": "phpunit --testsuite Integration",
+        "test-verbose": "phpunit --testdox --verbose",
+        "docker:start": "./run.sh start",
+        "docker:stop": "./run.sh stop",
+        "docker:test": "./run.sh test",
+        "docker:test-unit": "./run.sh test-unit",
+        "docker:test-integration": "./run.sh test-integration",
+        "docker:shell": "./run.sh shell"
+    },
+    "scripts-descriptions": {
+        "test": "Run all tests with detailed output",
+        "test-coverage": "Run tests with HTML coverage report",
+        "test-unit": "Run unit tests only",
+        "test-integration": "Run integration tests only",
+        "test-verbose": "Run tests with verbose output",
+        "docker:start": "Start Docker containers",
+        "docker:stop": "Stop Docker containers",
+        "docker:test": "Run tests inside Docker container",
+        "docker:test-unit": "Run unit tests inside Docker",
+        "docker:test-integration": "Run integration tests inside Docker",
+        "docker:shell": "Open shell in Docker container"
+    }
+}

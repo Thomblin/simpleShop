@@ -25,6 +25,7 @@ return array(
     'basket_total' => 'Warenkorbsumme',
     'add_to_basket' => 'In den Warenkorb',
     'added_to_basket' => 'Hinzugefügt!',
+    'updated_to_basket' => 'Aktualisiert!',
     'remove' => 'Entfernen',
     'preview' => 'Vorschau',
     'back' => 'Zurück',
@@ -40,5 +41,6 @@ return array(
     'form.success_message' => 'Vielen Dank für deine Bestellung. Du erhälst in wenigen Minuten eine Kopie per Mail und in Kürze eine Bestätigungsmail.',
 
     'error.fill_required' => 'Alle Pflichtfelder müssen ausgefüllt werden!',
+    'error.specify_quantity' => 'Bitte Anzahl angeben',
     'error.out_of_stock' => 'Die Bestellung konnte nicht ausgeführt werden. Du musst deine Auswahl anpassen, um die Bestellung auszuführen.',
 );

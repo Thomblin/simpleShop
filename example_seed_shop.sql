@@ -38,10 +38,10 @@ CREATE TABLE `bundle_options` (
     `bundle_option_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
     `bundle_id` int(10) unsigned NOT NULL COMMENT 'bundles.bundle_id',
     `option_id` int(10) unsigned NOT NULL COMMENT 'options.option_id',
-    `price` decimal(10, 2) DEFAULT NULL COMMENT 'override price per item for this bundle+option',
-    `min_count` int(11) DEFAULT NULL COMMENT 'override min amount to buy for this bundle+option',
-    `max_count` int(11) DEFAULT NULL COMMENT 'override max amount to buy for this bundle+option',
-    `inventory` int(11) DEFAULT NULL COMMENT 'inventory for this bundle+option (if NULL, falls back to bundle)',
+    `price` decimal(10, 2) NOT NULL COMMENT 'price per item for this bundle+option',
+    `min_count` int(11) NOT NULL DEFAULT 0 COMMENT 'min amount to buy for this bundle+option',
+    `max_count` int(11) NOT NULL DEFAULT 1 COMMENT 'max amount to buy for this bundle+option',
+    `inventory` int(11) NOT NULL DEFAULT 0 COMMENT 'inventory for this bundle+option',
     PRIMARY KEY (`bundle_option_id`),
     KEY `bundle_id` (`bundle_id`),
     KEY `option_id` (`option_id`),
@@ -72,55 +72,55 @@ VALUES (
         1,
         1,
         1,
-        NULL,
-        NULL,
-        NULL,
-        NULL
+        12.99,
+        1,
+        5,
+        49
     ),
     (
         2,
         2,
         2,
-        NULL,
-        NULL,
-        NULL,
-        NULL
+        22.99,
+        1,
+        3,
+        28
     ),
     (
         3,
         3,
         3,
-        NULL,
-        NULL,
-        NULL,
-        NULL
+        39.99,
+        1,
+        2,
+        13
     ),
     (
         4,
         4,
         4,
-        NULL,
-        NULL,
-        NULL,
-        NULL
+        5.99,
+        1,
+        10,
+        99
     ),
     (
         5,
         5,
         5,
-        NULL,
-        NULL,
-        NULL,
-        NULL
+        5.99,
+        1,
+        10,
+        77
     ),
     (
         6,
         6,
         6,
-        NULL,
-        NULL,
-        NULL,
-        NULL
+        5.99,
+        1,
+        10,
+        60
     );
 /*!40000 ALTER TABLE `bundle_options` ENABLE KEYS */
 ;
@@ -139,10 +139,6 @@ CREATE TABLE `bundles` (
     `bundle_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
     `item_id` int(10) unsigned NOT NULL COMMENT 'items.id',
     `name` varchar(256) COLLATE utf8_bin NOT NULL COMMENT 'subtitle',
-    `price` decimal(10, 2) DEFAULT '0.00' COMMENT 'price per item',
-    `min_count` int(11) DEFAULT '0' COMMENT 'min amount to buy',
-    `max_count` int(11) DEFAULT '1' COMMENT 'max amount to buy',
-    `inventory` int(11) DEFAULT '0' COMMENT 'items left in stock',
     PRIMARY KEY (`bundle_id`),
     KEY `item_id` (`item_id`),
     CONSTRAINT `fk_item_id` FOREIGN KEY (`item_id`) REFERENCES `items` (`item_id`) ON UPDATE CASCADE
@@ -162,56 +158,32 @@ INSERT INTO
 VALUES (
         1,
         1,
-        'Small Pack (250g)',
-        12.99,
-        1,
-        5,
-        49
+        'Small Pack (250g)'
     ),
     (
         2,
         1,
-        'Medium Pack (500g)',
-        22.99,
-        1,
-        3,
-        28
+        'Medium Pack (500g)'
     ),
     (
         3,
         1,
-        'Large Pack (1kg)',
-        39.99,
-        1,
-        2,
-        13
+        'Large Pack (1kg)'
     ),
     (
         4,
         2,
-        'Dark Chocolate (70% cocoa)',
-        5.99,
-        1,
-        10,
-        99
+        'Dark Chocolate (70% cocoa)'
     ),
     (
         5,
         2,
-        'Milk Chocolate (40% cocoa)',
-        5.99,
-        1,
-        10,
-        77
+        'Milk Chocolate (40% cocoa)'
     ),
     (
         6,
         2,
-        'White Chocolate',
-        5.99,
-        1,
-        10,
-        60
+        'White Chocolate'
     );
 /*!40000 ALTER TABLE `bundles` ENABLE KEYS */
 ;

@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- Simple shopping basket icon in shop colors -->
+  <rect width="32" height="32" fill="#880000" rx="4"/>
+  <!-- Shopping basket body -->
+  <path d="M8 12 L8 26 L24 26 L24 12" 
+        stroke="#ffffff" 
+        stroke-width="2" 
+        stroke-linecap="round" 
+        stroke-linejoin="round" 
+        fill="none"/>
+  <!-- Basket bottom line -->
+  <line x1="6" y1="12" x2="26" y2="12" 
+        stroke="#ffffff" 
+        stroke-width="2" 
+        stroke-linecap="round"/>
+  <!-- Basket handle -->
+  <path d="M8 12 L6 8 M24 12 L26 8" 
+        stroke="#ffffff" 
+        stroke-width="2" 
+        stroke-linecap="round"/>
+  <!-- Small items in basket (circles) -->
+  <circle cx="12" cy="17" r="1.5" fill="#ffffff"/>
+  <circle cx="16" cy="20" r="1.5" fill="#ffffff"/>
+  <circle cx="20" cy="17" r="1.5" fill="#ffffff"/>
+</svg>
+
