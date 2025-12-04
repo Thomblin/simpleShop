@@ -15,7 +15,8 @@ class Db implements DatabaseInterface
         if ($config instanceof mysqli) {
             $this->db = $config;
         } elseif ($config instanceof ConfigInterface) {
-            $this->db = mysqli_connect(
+            // Suppress warning - we check for failure and throw exception instead
+            $this->db = @mysqli_connect(
                 $config->getMysqlHost(),
                 $config->getMysqlUser(),
                 $config->getMysqlPassword(),
