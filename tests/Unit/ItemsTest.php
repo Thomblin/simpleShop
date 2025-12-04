@@ -87,6 +87,9 @@ class ItemsTest extends TestCase
             ]
         ]);
 
+        $bundleOption = $this->dbHelper->getData('bundle_options', 'bundle_option_id = 100')[0];
+        $this->assertEquals(10, $bundleOption['inventory']);
+
         $orders = [
             ['bundle_option_id' => 100, 'amount' => 5]
         ];
