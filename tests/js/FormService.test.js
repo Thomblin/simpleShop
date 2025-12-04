@@ -17,7 +17,11 @@ describe('FormService', () => {
     describe('generateBasketFields', () => {
         test('should remove existing basket fields', () => {
             const mockRemove = jest.fn();
-            $.mockReturnValueOnce({ remove: mockRemove });
+            const mockEach = jest.fn();
+            
+            $.mockReturnValueOnce({ remove: mockRemove }); // For removing old fields
+            $.mockReturnValueOnce({ each: mockEach, length: 0 }); // For option selects
+            $.mockReturnValueOnce({ each: mockEach, length: 0 }); // For quantity selects
 
             FormService.generateBasketFields();
 
@@ -36,8 +40,11 @@ describe('FormService', () => {
                 attr: jest.fn().mockReturnThis(),
                 appendTo: mockAppendTo
             };
+            const mockEach = jest.fn();
             
             $.mockReturnValueOnce({ remove: jest.fn() }); // For removing old fields
+            $.mockReturnValueOnce({ each: mockEach, length: 0 }); // For option selects
+            $.mockReturnValueOnce({ each: mockEach, length: 0 }); // For quantity selects
             $.mockReturnValue(mockElement); // For creating input elements
 
             FormService.generateBasketFields();
@@ -52,7 +59,24 @@ describe('FormService', () => {
 
             const mockAppendTo = jest.fn();
             const mockAttr = jest.fn().mockReturnValue({ appendTo: mockAppendTo });
+            const mockEach = jest.fn();
+            const mockRemoveAttr = jest.fn();
+            const mockData = jest.fn().mockReturnValue(null);
+            const mockAttrForData = jest.fn().mockReturnValue('some-name');
+            
+            // Mock for removing old basket fields
             $.mockReturnValueOnce({ remove: jest.fn() });
+            // Mock for option selects (each call)
+            $.mockReturnValueOnce({ 
+                each: mockEach,
+                length: 0  // No option selects in test
+            });
+            // Mock for quantity selects (each call)
+            $.mockReturnValueOnce({ 
+                each: mockEach,
+                length: 0  // No quantity selects in test
+            });
+            // Mock for creating input element
             $.mockImplementationOnce(() => ({ attr: mockAttr }));
 
             FormService.generateBasketFields();
@@ -70,7 +94,24 @@ describe('FormService', () => {
 
             const mockAppendTo = jest.fn();
             const mockAttr = jest.fn().mockReturnValue({ appendTo: mockAppendTo });
+            const mockEach = jest.fn();
+            const mockRemoveAttr = jest.fn();
+            const mockData = jest.fn().mockReturnValue(null);
+            const mockAttrForData = jest.fn().mockReturnValue('some-name');
+            
+            // Mock for removing old basket fields
             $.mockReturnValueOnce({ remove: jest.fn() });
+            // Mock for option selects (each call)
+            $.mockReturnValueOnce({ 
+                each: mockEach,
+                length: 0  // No option selects in test
+            });
+            // Mock for quantity selects (each call)
+            $.mockReturnValueOnce({ 
+                each: mockEach,
+                length: 0  // No quantity selects in test
+            });
+            // Mock for creating input element
             $.mockImplementationOnce(() => ({ attr: mockAttr }));
 
             FormService.generateBasketFields();
@@ -85,7 +126,20 @@ describe('FormService', () => {
 
         test('should not create fields when basket is empty', () => {
             const mockAppendTo = jest.fn();
+            const mockEach = jest.fn();
+            
+            // Mock for removing old basket fields
             $.mockReturnValueOnce({ remove: jest.fn() });
+            // Mock for option selects (each call)
+            $.mockReturnValueOnce({ 
+                each: mockEach,
+                length: 0  // No option selects in test
+            });
+            // Mock for quantity selects (each call)
+            $.mockReturnValueOnce({ 
+                each: mockEach,
+                length: 0  // No quantity selects in test
+            });
 
             FormService.generateBasketFields();
 

@@ -261,6 +261,42 @@ var SimpleShop = (function () {
                 $('.basket-field').remove();
             }
 
+            // Disable visible option selects and quantity selects to prevent interference
+            // Only basket fields should be submitted, not the visible form controls
+            // We disable them (instead of clearing) to preserve UI state if user goes back
+            if (typeof $ !== 'undefined') {
+                // Temporarily remove names from option selects so they're not serialized
+                var $optionSelects = $('.option-select');
+                if ($optionSelects && typeof $optionSelects.each === 'function') {
+                    $optionSelects.each(function() {
+                        var $select = $(this);
+                        if ($select && typeof $select.data === 'function' && typeof $select.attr === 'function') {
+                            if (!$select.data('original-name')) {
+                                $select.data('original-name', $select.attr('name'));
+                            }
+                            if (typeof $select.removeAttr === 'function') {
+                                $select.removeAttr('name');
+                            }
+                        }
+                    });
+                }
+                // Temporarily remove names from quantity selects so they're not serialized
+                var $quantitySelects = $('.quantity-select');
+                if ($quantitySelects && typeof $quantitySelects.each === 'function') {
+                    $quantitySelects.each(function() {
+                        var $select = $(this);
+                        if ($select && typeof $select.data === 'function' && typeof $select.attr === 'function') {
+                            if (!$select.data('original-name')) {
+                                $select.data('original-name', $select.attr('name'));
+                            }
+                            if (typeof $select.removeAttr === 'function') {
+                                $select.removeAttr('name');
+                            }
+                        }
+                    });
+                }
+            }
+
             // Add new fields for each basket item
             if (typeof $ !== 'undefined') {
                 basket.forEach(function (item) {
@@ -272,6 +308,37 @@ var SimpleShop = (function () {
                         class: 'basket-field price'
                     }).appendTo('#ajax_form');
                 });
+            }
+        },
+        
+        restoreFormFields: function () {
+            // Restore names to option and quantity selects after form submission
+            // This allows the form to work normally if user goes back
+            if (typeof $ !== 'undefined') {
+                var $optionSelects = $('.option-select');
+                if ($optionSelects && typeof $optionSelects.each === 'function') {
+                    $optionSelects.each(function() {
+                        var $select = $(this);
+                        if ($select && typeof $select.data === 'function' && typeof $select.attr === 'function') {
+                            var originalName = $select.data('original-name');
+                            if (originalName) {
+                                $select.attr('name', originalName);
+                            }
+                        }
+                    });
+                }
+                var $quantitySelects = $('.quantity-select');
+                if ($quantitySelects && typeof $quantitySelects.each === 'function') {
+                    $quantitySelects.each(function() {
+                        var $select = $(this);
+                        if ($select && typeof $select.data === 'function' && typeof $select.attr === 'function') {
+                            var originalName = $select.data('original-name');
+                            if (originalName) {
+                                $select.attr('name', originalName);
+                            }
+                        }
+                    });
+                }
             }
         }
     };
@@ -394,6 +461,10 @@ var SimpleShop = (function () {
 
         // Preview and mail functions
         preview: function () {
+            // Ensure basket fields are generated before preview
+            // This also clears visible option/quantity selects to prevent interference
+            FormService.generateBasketFields();
+            
             var formData = ApiService.serializeForm('#ajax_form');
             ApiService.post('ajax.php', formData, function (response) {
                 if (response.error) {
@@ -415,11 +486,16 @@ var SimpleShop = (function () {
         },
 
         back: function () {
+            // Restore form field names when going back
+            FormService.restoreFormFields();
             DomService.hide('#mail');
             DomService.show('#main');
         },
 
         send: function () {
+            // Ensure basket fields are generated before sending order
+            FormService.generateBasketFields();
+            
             var formData = ApiService.serializeForm('#ajax_form');
             ApiService.post('ajax.php?mail=1', formData, function (response) {
                 if (response.error) {

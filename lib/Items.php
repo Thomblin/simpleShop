@@ -144,14 +144,17 @@ class Items
             $inventoryData = $this->loadInventoryData();
             $bundleOptionInventories = $inventoryData['bundleOptions'];
 
+            // Consolidate orders by bundle_option_id (sum amounts for same bundle_option_id)
+            $consolidatedOrders = $this->consolidateOrders($orders);
+
             // Validate availability first
-            if (!$this->validateOrderAvailability($orders, $bundleOptionInventories)) {
+            if (!$this->validateOrderAvailability($consolidatedOrders, $bundleOptionInventories)) {
                 $this->db->rollback();
                 return false;
             }
 
             // Perform updates with prepared statements to prevent SQL injection
-            $this->executeInventoryUpdates($orders, $bundleOptionInventories);
+            $this->executeInventoryUpdates($consolidatedOrders, $bundleOptionInventories);
 
             $this->db->commit();
             return true;
@@ -159,6 +162,43 @@ class Items
             $this->db->rollback();
             throw $e;
         }
+    }
+
+    /**
+     * Consolidate orders by bundle_option_id - sum amounts for orders with the same bundle_option_id
+     * This ensures that if the same bundle_option_id appears multiple times, their amounts are summed
+     *
+     * @param array $orders
+     * @return array Consolidated orders
+     */
+    private function consolidateOrders(array $orders)
+    {
+        $consolidated = [];
+
+        foreach ($orders as $order) {
+            $bundleOptionId = isset($order['bundle_option_id']) ? (int) $order['bundle_option_id'] : 0;
+            $amount = (int) $order['amount'];
+
+            // If no bundle_option_id, keep the order as-is for validation to catch
+            if (!$bundleOptionId) {
+                $consolidated[] = $order;
+                continue;
+            }
+
+            if (isset($consolidated[$bundleOptionId])) {
+                // Sum amounts for the same bundle_option_id
+                $consolidated[$bundleOptionId]['amount'] += $amount;
+            } else {
+                // First occurrence of this bundle_option_id
+                $consolidated[$bundleOptionId] = [
+                    'bundle_option_id' => $bundleOptionId,
+                    'amount' => $amount
+                ];
+            }
+        }
+
+        // Return as indexed array (values only)
+        return array_values($consolidated);
     }
 
     /**

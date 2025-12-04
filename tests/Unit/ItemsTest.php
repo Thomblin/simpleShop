@@ -279,6 +279,89 @@ class ItemsTest extends TestCase
         $this->assertEquals(10, $bundleOption2['inventory']); // 20 - 10 = 10
     }
 
+    public function testOrderItemWithMultipleBundlesForSameItem()
+    {
+        // Test the bug fix: multiple bundles for the same item should all have inventory reduced
+        $this->dbHelper->insertData([
+            'items' => [
+                ['item_id' => 1, 'name' => 'Test Item', 'min_porto' => 0]
+            ],
+            'bundles' => [
+                ['bundle_id' => 1, 'item_id' => 1, 'name' => 'Bundle 1'],
+                ['bundle_id' => 2, 'item_id' => 1, 'name' => 'Bundle 2'],
+                ['bundle_id' => 3, 'item_id' => 1, 'name' => 'Bundle 3']
+            ],
+            'option_groups' => [
+                ['option_group_id' => 1, 'name' => 'Default', 'display_order' => 0]
+            ],
+            'options' => [
+                ['option_id' => 1, 'option_group_id' => 1, 'name' => 'Default', 'display_order' => 0, 'description' => null]
+            ],
+            'bundle_options' => [
+                ['bundle_option_id' => 100, 'bundle_id' => 1, 'option_id' => 1, 'price' => 10.0, 'min_count' => 1, 'max_count' => 10, 'inventory' => 20],
+                ['bundle_option_id' => 200, 'bundle_id' => 2, 'option_id' => 1, 'price' => 20.0, 'min_count' => 1, 'max_count' => 10, 'inventory' => 30],
+                ['bundle_option_id' => 300, 'bundle_id' => 3, 'option_id' => 1, 'price' => 30.0, 'min_count' => 1, 'max_count' => 10, 'inventory' => 40]
+            ]
+        ]);
+
+        // Order all three bundles for the same item
+        $orders = [
+            ['bundle_option_id' => 100, 'amount' => 5],
+            ['bundle_option_id' => 200, 'amount' => 10],
+            ['bundle_option_id' => 300, 'amount' => 15]
+        ];
+
+        $result = $this->items->orderItem($orders);
+
+        $this->assertTrue($result);
+
+        // Verify all three inventories were updated
+        $bundleOption1 = $this->dbHelper->getData('bundle_options', 'bundle_option_id = 100')[0];
+        $bundleOption2 = $this->dbHelper->getData('bundle_options', 'bundle_option_id = 200')[0];
+        $bundleOption3 = $this->dbHelper->getData('bundle_options', 'bundle_option_id = 300')[0];
+        
+        $this->assertEquals(15, $bundleOption1['inventory']); // 20 - 5 = 15
+        $this->assertEquals(20, $bundleOption2['inventory']); // 30 - 10 = 20
+        $this->assertEquals(25, $bundleOption3['inventory']); // 40 - 15 = 25
+    }
+
+    public function testOrderItemConsolidatesSameBundleOptionId()
+    {
+        // Test that orders with the same bundle_option_id are consolidated (summed)
+        $this->dbHelper->insertData([
+            'items' => [
+                ['item_id' => 1, 'name' => 'Test Item', 'min_porto' => 0]
+            ],
+            'bundles' => [
+                ['bundle_id' => 1, 'item_id' => 1, 'name' => 'Bundle 1']
+            ],
+            'option_groups' => [
+                ['option_group_id' => 1, 'name' => 'Default', 'display_order' => 0]
+            ],
+            'options' => [
+                ['option_id' => 1, 'option_group_id' => 1, 'name' => 'Default', 'display_order' => 0, 'description' => null]
+            ],
+            'bundle_options' => [
+                ['bundle_option_id' => 100, 'bundle_id' => 1, 'option_id' => 1, 'price' => 10.0, 'min_count' => 1, 'max_count' => 10, 'inventory' => 20]
+            ]
+        ]);
+
+        // Order the same bundle_option_id multiple times
+        $orders = [
+            ['bundle_option_id' => 100, 'amount' => 5],
+            ['bundle_option_id' => 100, 'amount' => 3],
+            ['bundle_option_id' => 100, 'amount' => 2]
+        ];
+
+        $result = $this->items->orderItem($orders);
+
+        $this->assertTrue($result);
+
+        // Verify inventory was reduced by the sum (5 + 3 + 2 = 10)
+        $bundleOption = $this->dbHelper->getData('bundle_options', 'bundle_option_id = 100')[0];
+        $this->assertEquals(10, $bundleOption['inventory']); // 20 - 10 = 10
+    }
+
     public function testOrderItemValidatesAllOrdersBeforeUpdating()
     {
         $this->dbHelper->insertData([
