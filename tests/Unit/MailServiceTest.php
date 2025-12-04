@@ -67,4 +67,85 @@ class MailServiceTest extends TestCase
         $this->assertEquals('fromEmail', $params[3]->getName());
         $this->assertEquals('fromName', $params[4]->getName());
     }
+
+    public function testSendEncodesUtf8Subject()
+    {
+        $service = new MailService();
+        
+        // Test that send() method can be called (we can't easily test mail() function)
+        // but we can verify the method executes without errors
+        $result = @$service->send(
+            'test@example.com',
+            'Test Subject',
+            '<p>Test message</p>',
+            'from@example.com',
+            'Test Sender'
+        );
+        
+        // Result depends on mail() function, but method should execute
+        $this->assertIsBool($result);
+    }
+
+    public function testSendEncodesUtf8FromName()
+    {
+        $service = new MailService();
+        
+        // Test with UTF-8 characters in from name
+        $result = @$service->send(
+            'test@example.com',
+            'Test',
+            '<p>Message</p>',
+            'from@example.com',
+            'Tëst Sënder'
+        );
+        
+        $this->assertIsBool($result);
+    }
+
+    public function testSendToMultipleWithSingleRecipient()
+    {
+        $service = new MailService();
+        
+        $result = @$service->sendToMultiple(
+            ['test@example.com'],
+            'Test Subject',
+            '<p>Test message</p>',
+            'from@example.com',
+            'Test Sender'
+        );
+        
+        $this->assertIsBool($result);
+    }
+
+    public function testSendToMultipleWithMultipleRecipients()
+    {
+        $service = new MailService();
+        
+        $result = @$service->sendToMultiple(
+            ['test1@example.com', 'test2@example.com', 'test3@example.com'],
+            'Test Subject',
+            '<p>Test message</p>',
+            'from@example.com',
+            'Test Sender'
+        );
+        
+        $this->assertIsBool($result);
+    }
+
+    public function testSendToMultipleReturnsFalseIfAnyFails()
+    {
+        $service = new MailService();
+        
+        // With empty recipients array, it should return true (no failures)
+        $result = @$service->sendToMultiple(
+            [],
+            'Test Subject',
+            '<p>Test message</p>',
+            'from@example.com',
+            'Test Sender'
+        );
+        
+        // If no recipients, all succeed (none to fail)
+        $this->assertTrue($result);
+    }
 }

@@ -128,6 +128,33 @@ test() {
         start
     fi
 
+    # Ensure test_mysql is running
+    if ! docker compose ps test_mysql | grep -q "Up"; then
+        print_info "Starting test database..."
+        docker compose up -d test_mysql
+        
+        # Wait for test database to be ready
+        print_info "Waiting for test database to be ready..."
+        local max_attempts=30
+        local attempt=0
+        
+        while [ $attempt -lt $max_attempts ]; do
+            if docker compose exec -T test_mysql mysqladmin ping -h 127.0.0.1 -uroot -ptestroot > /dev/null 2>&1; then
+                print_success "Test database is ready!"
+                break
+            fi
+            
+            attempt=$((attempt + 1))
+            echo -n "."
+            sleep 1
+        done
+        
+        if [ $attempt -eq $max_attempts ]; then
+            print_error "Test database failed to start within the timeout period"
+            exit 1
+        fi
+    fi
+
     # Install dependencies if needed
     if ! docker compose exec -T shop test -d vendor; then
         print_info "Installing dependencies..."
@@ -152,6 +179,33 @@ test_coverage() {
         start
     fi
 
+    # Ensure test_mysql is running
+    if ! docker compose ps test_mysql | grep -q "Up"; then
+        print_info "Starting test database..."
+        docker compose up -d test_mysql
+        
+        # Wait for test database to be ready
+        print_info "Waiting for test database to be ready..."
+        local max_attempts=30
+        local attempt=0
+        
+        while [ $attempt -lt $max_attempts ]; do
+            if docker compose exec -T test_mysql mysqladmin ping -h 127.0.0.1 -uroot -ptestroot > /dev/null 2>&1; then
+                print_success "Test database is ready!"
+                break
+            fi
+            
+            attempt=$((attempt + 1))
+            echo -n "."
+            sleep 1
+        done
+        
+        if [ $attempt -eq $max_attempts ]; then
+            print_error "Test database failed to start within the timeout period"
+            exit 1
+        fi
+    fi
+
     # Install dependencies if needed
     if ! docker compose exec -T shop test -d vendor; then
         print_info "Installing dependencies..."
@@ -162,9 +216,14 @@ test_coverage() {
     print_info "Running tests with coverage report..."
     docker compose exec -T shop vendor/bin/phpunit --coverage-text --coverage-html coverage
 
-    if [ -d "coverage" ]; then
+    if [ -d "coverage" ] && [ -f "coverage/index.html" ]; then
         print_success "Coverage report generated in coverage/ directory"
-        print_info "Open coverage/index.html in your browser to view the HTML report"
+        COVERAGE_PATH=$(realpath coverage/index.html)
+        print_info "Coverage report is available at: file://$COVERAGE_PATH"
+        print_info "Open it in your browser with:"
+        print_info "  - Linux: xdg-open coverage/index.html"
+        print_info "  - macOS: open coverage/index.html"
+        print_info "  - Windows: start coverage/index.html"
     fi
 }
 
@@ -264,6 +323,20 @@ db() {
     docker compose exec shop_mysql mysql -uuser -puser shop
 }
 
+
+# Database access
+db_test() {
+    print_header "MySQL Database Access"
+
+    if ! docker compose ps | grep -q "Up"; then
+        print_warning "Containers are not running. Starting them first..."
+        start
+    fi
+
+    print_info "Connecting to MySQL..."
+    docker compose exec test_mysql mysql -utestuser -ptestpass test_shop
+}
+
 # Show help
 help() {
     cat << EOF
@@ -294,6 +367,7 @@ ${GREEN}Development:${NC}
   composer <cmd>     Run composer command
   php <cmd>          Run PHP command
   db                 Access MySQL database
+  db_test            Access MySQL test database
 
 ${GREEN}Examples:${NC}
   ./run.sh start                    # Start containers
@@ -362,6 +436,9 @@ case "$1" in
         ;;
     db)
         db
+        ;;
+    db_test)
+        db_test
         ;;
     clean)
         clean

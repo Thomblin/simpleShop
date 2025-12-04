@@ -33,6 +33,7 @@ help:
 	@echo "  make install            - Install composer dependencies"
 	@echo "  make shell              - Open bash shell in container"
 	@echo "  make db                 - Access MySQL database"
+	@echo "  make db_test            - Access MySQL test database"
 	@echo ""
 	@echo "$(GREEN)Quick Start:$(NC)"
 	@echo "  make start && make test"
@@ -89,6 +90,10 @@ shell:
 ## db: Access MySQL database
 db:
 	@./run.sh db
+
+## db_test: Access MySQL test database
+db_test:
+	@./run.sh db_test
 
 ## clean: Clean up all containers and volumes
 clean:

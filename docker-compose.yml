@@ -1,9 +1,8 @@
-version: '2'
 services:
   shop:
     build: ./docker/php
     volumes:
-      - ./:/var/www/html/
+      - ./:/var/www/html/ # Entire project is mounted, including coverage/ directory
     ports:
       - "11180:80"
     depends_on:
@@ -12,19 +11,36 @@ services:
   shop_mysql:
     image: mysql:8.4
     environment:
-        - MYSQL_ROOT_PASSWORD=root
-        - MYSQL_DATABASE=shop
-        - MYSQL_USER=user
-        - MYSQL_PASSWORD=user
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=shop
+      - MYSQL_USER=user
+      - MYSQL_PASSWORD=user
     volumes:
       - mysql_data:/var/lib/mysql
     ports:
       - "13306:3306"
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -proot || exit 1"]
+      test: [ "CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -proot || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 5
+
+  test_mysql:
+    image: mysql:8.4
+    environment:
+      - MYSQL_ROOT_PASSWORD=testroot
+      - MYSQL_DATABASE=test_shop
+      - MYSQL_USER=testuser
+      - MYSQL_PASSWORD=testpass
+    ports:
+      - "13307:3306"
+    healthcheck:
+      test: [ "CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -ptestroot || exit 1" ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    tmpfs:
+      - /var/lib/mysql
 
 volumes:
   mysql_data:

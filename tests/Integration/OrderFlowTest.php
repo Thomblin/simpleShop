@@ -7,26 +7,48 @@ use PHPUnit\Framework\TestCase;
  */
 class OrderFlowTest extends TestCase
 {
-    private $mockDb;
+    private $dbHelper;
+    private $db;
     private $items;
     private $priceCalculator;
     private $orderService;
 
     protected function setUp(): void
     {
-        $this->mockDb = new MockDb();
-        $this->items = new Items($this->mockDb);
+        $this->dbHelper = new TestDatabaseHelper(
+            'test_mysql', // Docker service name
+            'testuser',
+            'testpass',
+            'test_shop'
+        );
+        $this->dbHelper->cleanup(); // Clean before each test
+        $this->db = new Db($this->dbHelper->getConnection());
+        $this->items = new Items($this->db);
         $this->priceCalculator = new PriceCalculator('€');
         $this->orderService = new OrderService($this->items, $this->priceCalculator);
     }
 
     protected function tearDown(): void
     {
-        $this->mockDb->reset();
+        if ($this->dbHelper) {
+            $this->dbHelper->cleanup();
+            // Don't close connection here - let PHP handle it
+            // Closing causes issues with subsequent tests
+        }
     }
 
     public function testCompleteOrderFlowWithSufficientInventory()
     {
+        // Set up database with test data
+        $this->dbHelper->insertData([
+            'items' => [
+                ['item_id' => 1, 'name' => 'Test Product', 'picture' => null, 'description' => null, 'min_porto' => 5.50]
+            ],
+            'bundles' => [
+                ['bundle_id' => 10, 'item_id' => 1, 'name' => 'Small Package', 'price' => 29.99, 'min_count' => 1, 'max_count' => 5, 'inventory' => 100]
+            ]
+        ]);
+
         // Set up shop data
         $shopItems = [
             [
@@ -46,12 +68,6 @@ class OrderFlowTest extends TestCase
                 'option_groups' => []
             ]
         ];
-
-        // Set up database mock
-        $this->mockDb->setData('bundles', [
-            ['bundle_id' => 10, 'inventory' => 100]
-        ]);
-        $this->mockDb->setData('bundle_options', []);
 
         // Simulate customer order
         $postData = [
@@ -85,22 +101,23 @@ class OrderFlowTest extends TestCase
         $success = $this->items->orderItem($ordersForDb);
         $this->assertTrue($success);
 
-        // Verify transaction was used
-        $queries = $this->mockDb->getQueries();
-        $transactionStarted = false;
-        $transactionCommitted = false;
-
-        foreach ($queries as $query) {
-            if ($query['type'] === 'beginTransaction') $transactionStarted = true;
-            if ($query['type'] === 'commit') $transactionCommitted = true;
-        }
-
-        $this->assertTrue($transactionStarted);
-        $this->assertTrue($transactionCommitted);
+        // Verify inventory was updated (transaction committed)
+        $bundle = $this->dbHelper->getData('bundles', 'bundle_id = 10')[0];
+        $this->assertEquals(98, $bundle['inventory']); // 100 - 2 = 98
     }
 
     public function testCompleteOrderFlowWithInsufficientInventory()
     {
+        // Set up database with low inventory
+        $this->dbHelper->insertData([
+            'items' => [
+                ['item_id' => 1, 'name' => 'Limited Product', 'picture' => null, 'description' => null, 'min_porto' => 3.00]
+            ],
+            'bundles' => [
+                ['bundle_id' => 20, 'item_id' => 1, 'name' => 'Last Items', 'price' => 99.99, 'min_count' => 1, 'max_count' => 10, 'inventory' => 3]
+            ]
+        ]);
+
         // Set up shop data
         $shopItems = [
             [
@@ -120,12 +137,6 @@ class OrderFlowTest extends TestCase
                 'option_groups' => []
             ]
         ];
-
-        // Set up database mock with low inventory
-        $this->mockDb->setData('bundles', [
-            ['bundle_id' => 20, 'inventory' => 3]
-        ]);
-        $this->mockDb->setData('bundle_options', []);
 
         // Customer tries to order 5 (more than available)
         $postData = [
@@ -149,20 +160,23 @@ class OrderFlowTest extends TestCase
         $success = $this->items->orderItem($ordersForDb);
         $this->assertFalse($success);
 
-        // Verify rollback occurred
-        $queries = $this->mockDb->getQueries();
-        $hasRollback = false;
-        foreach ($queries as $query) {
-            if ($query['type'] === 'rollback') {
-                $hasRollback = true;
-                break;
-            }
-        }
-        $this->assertTrue($hasRollback);
+        // Verify rollback occurred - inventory should still be 3
+        $bundle = $this->dbHelper->getData('bundles', 'bundle_id = 20')[0];
+        $this->assertEquals(3, $bundle['inventory']); // Should still be 3 (transaction rolled back)
     }
 
     public function testOrderFlowWithCollectionByCustomer()
     {
+        // Set up database
+        $this->dbHelper->insertData([
+            'items' => [
+                ['item_id' => 1, 'name' => 'Product', 'picture' => null, 'description' => null, 'min_porto' => 10.00]
+            ],
+            'bundles' => [
+                ['bundle_id' => 30, 'item_id' => 1, 'name' => 'Standard', 'price' => 50.00, 'min_count' => 1, 'max_count' => 10, 'inventory' => 50]
+            ]
+        ]);
+
         $shopItems = [
             [
                 'item_id' => 1,
@@ -199,6 +213,18 @@ class OrderFlowTest extends TestCase
 
     public function testOrderFlowWithMultipleItems()
     {
+        // Set up database with multiple items
+        $this->dbHelper->insertData([
+            'items' => [
+                ['item_id' => 1, 'name' => 'Product A', 'picture' => null, 'description' => null, 'min_porto' => 5.00],
+                ['item_id' => 2, 'name' => 'Product B', 'picture' => null, 'description' => null, 'min_porto' => 7.50]
+            ],
+            'bundles' => [
+                ['bundle_id' => 10, 'item_id' => 1, 'name' => 'Bundle A', 'price' => 10.00, 'min_count' => 1, 'max_count' => 10, 'inventory' => 50],
+                ['bundle_id' => 20, 'item_id' => 2, 'name' => 'Bundle B', 'price' => 20.00, 'min_count' => 1, 'max_count' => 10, 'inventory' => 30]
+            ]
+        ]);
+
         $shopItems = [
             [
                 'item_id' => 1,
@@ -219,12 +245,6 @@ class OrderFlowTest extends TestCase
                 'option_groups' => []
             ]
         ];
-
-        $this->mockDb->setData('bundles', [
-            ['bundle_id' => 10, 'inventory' => 50],
-            ['bundle_id' => 20, 'inventory' => 30]
-        ]);
-        $this->mockDb->setData('bundle_options', []);
 
         $postData = [
             1 => [10 => 2],  // 2 of Product A
@@ -249,6 +269,12 @@ class OrderFlowTest extends TestCase
 
         $success = $this->items->orderItem($ordersForDb);
         $this->assertTrue($success);
+
+        // Verify inventory was updated for both bundles
+        $bundle10 = $this->dbHelper->getData('bundles', 'bundle_id = 10')[0];
+        $bundle20 = $this->dbHelper->getData('bundles', 'bundle_id = 20')[0];
+        $this->assertEquals(48, $bundle10['inventory']); // 50 - 2 = 48
+        $this->assertEquals(27, $bundle20['inventory']); // 30 - 3 = 27
     }
 
     public function testPriceCalculation()

@@ -119,4 +119,71 @@ class TemplateTest extends TestCase
         $this->assertStringContainsString('Alice', $result);
         $this->assertStringContainsString('200.00', $result);
     }
+
+    public function testValidateFilePathWithAbsolutePath()
+    {
+        $template = new Template($this->templatePath);
+        $template->add('name', 'Test');
+        $template->add('total', '100.00 €');
+        
+        // Test with absolute path to existing file
+        $absolutePath = realpath($this->templatePath . 'test_template.php');
+        $result = $template->parse($absolutePath, false);
+        
+        $this->assertStringContainsString('Hello Test!', $result);
+    }
+
+    public function testValidateFilePathPreventsDirectoryTraversalWithMixedSlashes()
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Template file outside allowed directory');
+        
+        $template = new Template($this->templatePath);
+        // Try with mixed forward/backward slashes
+        $template->parse('..\\..\\etc\\passwd', false);
+    }
+
+    public function testValidateFilePathPreventsDirectoryTraversalWithEncodedPath()
+    {
+        $this->expectException(InvalidArgumentException::class);
+        
+        $template = new Template($this->templatePath);
+        // Try with encoded path traversal
+        $template->parse('..%2F..%2Fetc%2Fpasswd', false);
+    }
+
+    public function testValidateFilePathHandlesCurrentDirectoryReference()
+    {
+        $template = new Template($this->templatePath);
+        $template->add('name', 'Test');
+        $template->add('total', '100.00 €');
+        
+        // Test with ./ prefix (should be normalized)
+        $result = $template->parse('./test_template.php', false);
+        
+        $this->assertStringContainsString('Hello Test!', $result);
+    }
+
+    public function testValidateFilePathWithRealPathOutsideBase()
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Template file outside allowed directory');
+        
+        // Create a template with a base path
+        $basePath = sys_get_temp_dir() . '/template_test_' . uniqid() . '/';
+        mkdir($basePath, 0777, true);
+        
+        $template = new Template($basePath);
+        
+        // Try to access a file outside (using realpath check)
+        // This tests the final realpath check in validateFilePath
+        try {
+            $template->parse(__FILE__, false); // Try to access this test file
+        } catch (InvalidArgumentException $e) {
+            rmdir($basePath);
+            throw $e;
+        }
+        
+        rmdir($basePath);
+    }
 }

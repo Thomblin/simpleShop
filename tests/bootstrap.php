@@ -7,7 +7,15 @@
 // Include the autoloader
 require_once __DIR__ . '/../autoload.php';
 
-// Auto-load test mocks
+// Auto-load test helpers
+spl_autoload_register(function ($className) {
+    $helperFile = __DIR__ . '/Helpers/' . $className . '.php';
+    if (file_exists($helperFile)) {
+        include $helperFile;
+    }
+});
+
+// Auto-load test mocks (for backward compatibility)
 spl_autoload_register(function ($className) {
     $mockFile = __DIR__ . '/Mocks/' . $className . '.php';
     if (file_exists($mockFile)) {
@@ -22,3 +30,6 @@ if (!function_exists('t')) {
         return $key;
     }
 }
+
+// Initialize test database helper (will be used by tests that need it)
+// Note: Tests should create their own instance in setUp() and cleanup in tearDown()
