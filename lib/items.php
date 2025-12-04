@@ -60,16 +60,12 @@ class Items
     }
 
     /**
-     * @param array $orders
+     * Load inventory data for validation and updates
      *
-     * @return bool
+     * @return array ['bundles' => array, 'bundleOptions' => array]
      */
-    public function orderItem(array $orders)
+    private function loadInventoryData()
     {
-        // Lock both tables since inventory may be on bundle_options or bundles
-        $this->db->exec("LOCK TABLES bundles WRITE, bundle_options WRITE");
-
-        // Load current inventories
         $bundleInventories = [];
         foreach ($this->loadBundles() as $bundle) {
             $bundleInventories[$bundle['bundle_id']] = (int)$bundle['inventory'];
@@ -83,7 +79,22 @@ class Items
             ];
         }
 
-        // Validate availability first
+        return [
+            'bundles' => $bundleInventories,
+            'bundleOptions' => $bundleOptionInventories
+        ];
+    }
+
+    /**
+     * Validate that all orders have sufficient inventory
+     *
+     * @param array $orders
+     * @param array $bundleInventories
+     * @param array $bundleOptionInventories
+     * @return bool True if all orders can be fulfilled
+     */
+    private function validateOrderAvailability(array $orders, array $bundleInventories, array $bundleOptionInventories)
+    {
         foreach ($orders as $order) {
             $amount = (int)$order['amount'];
             $bundleOptionId = isset($order['bundle_option_id']) ? (int)$order['bundle_option_id'] : 0;
@@ -91,7 +102,6 @@ class Items
 
             if ($bundleOptionId && isset($bundleOptionInventories[$bundleOptionId]) && $bundleOptionInventories[$bundleOptionId]['inventory'] !== null) {
                 if ($amount > $bundleOptionInventories[$bundleOptionId]['inventory']) {
-                    $this->db->exec("UNLOCK TABLES");
                     return false;
                 }
             } else {
@@ -100,30 +110,75 @@ class Items
                     $bundleId = $bundleOptionInventories[$bundleOptionId]['bundle_id'];
                 }
                 if (!isset($bundleInventories[$bundleId]) || $amount > $bundleInventories[$bundleId]) {
-                    $this->db->exec("UNLOCK TABLES");
                     return false;
                 }
             }
         }
 
-        // Perform updates
+        return true;
+    }
+
+    /**
+     * Execute inventory updates for all orders
+     *
+     * @param array $orders
+     * @param array $bundleOptionInventories
+     * @return void
+     */
+    private function executeInventoryUpdates(array $orders, array $bundleOptionInventories)
+    {
         foreach ($orders as $order) {
             $amount = (int)$order['amount'];
             $bundleOptionId = isset($order['bundle_option_id']) ? (int)$order['bundle_option_id'] : 0;
             $bundleId = isset($order['bundle_id']) ? (int)$order['bundle_id'] : 0;
 
             if ($bundleOptionId && isset($bundleOptionInventories[$bundleOptionId]) && $bundleOptionInventories[$bundleOptionId]['inventory'] !== null) {
-                $this->db->exec("UPDATE bundle_options SET inventory=inventory-$amount WHERE bundle_option_id=$bundleOptionId");
+                $this->db->execute(
+                    "UPDATE bundle_options SET inventory = inventory - ? WHERE bundle_option_id = ?",
+                    [$amount, $bundleOptionId]
+                );
             } else {
                 if (empty($bundleId) && $bundleOptionId && isset($bundleOptionInventories[$bundleOptionId])) {
                     $bundleId = $bundleOptionInventories[$bundleOptionId]['bundle_id'];
                 }
-                $this->db->exec("UPDATE bundles SET inventory=inventory-$amount WHERE bundle_id=$bundleId");
+                $this->db->execute(
+                    "UPDATE bundles SET inventory = inventory - ? WHERE bundle_id = ?",
+                    [$amount, $bundleId]
+                );
             }
         }
+    }
 
-        $this->db->exec("UNLOCK TABLES");
-        return true;
+    /**
+     * @param array $orders
+     *
+     * @return bool
+     */
+    public function orderItem(array $orders)
+    {
+        // Use transactions instead of table locks for better testability
+        $this->db->beginTransaction();
+
+        try {
+            $inventoryData = $this->loadInventoryData();
+            $bundleInventories = $inventoryData['bundles'];
+            $bundleOptionInventories = $inventoryData['bundleOptions'];
+
+            // Validate availability first
+            if (!$this->validateOrderAvailability($orders, $bundleInventories, $bundleOptionInventories)) {
+                $this->db->rollback();
+                return false;
+            }
+
+            // Perform updates with prepared statements to prevent SQL injection
+            $this->executeInventoryUpdates($orders, $bundleOptionInventories);
+
+            $this->db->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->db->rollback();
+            throw $e;
+        }
     }
 
     /**

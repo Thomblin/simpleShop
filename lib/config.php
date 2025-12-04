@@ -1,6 +1,6 @@
 <?php
 
-class Config
+class Config implements ConfigInterface
 {
     const REQUIRED = 1;
     const OPTIONAL = 0;
@@ -24,7 +24,57 @@ class Config
     public $mysqlDatabase = 'shop';
 
     public $language = 'de';
-    public $showInventory = false;
+    public $showInventory = true;
+
+    public function getMysqlHost()
+    {
+        return $this->mysqlHost;
+    }
+
+    public function getMysqlUser()
+    {
+        return $this->mysqlUser;
+    }
+
+    public function getMysqlPassword()
+    {
+        return $this->mysqlPassword;
+    }
+
+    public function getMysqlDatabase()
+    {
+        return $this->mysqlDatabase;
+    }
+
+    public function getLanguage()
+    {
+        return $this->language;
+    }
+
+    public function getShowInventory()
+    {
+        return $this->showInventory;
+    }
+
+    public function getAllowedTextfields()
+    {
+        return $this->allowedTextfields;
+    }
+
+    public function getCurrency()
+    {
+        return self::CURRENCY;
+    }
+
+    public function getMailAddress()
+    {
+        return self::MAIL_ADDRESS;
+    }
+
+    public function getMailUser()
+    {
+        return self::MAIL_USER;
+    }
 }
 
 
