@@ -75,4 +75,32 @@ class TranslationTest extends TestCase
         $this->assertEquals('Not found', $translation->translate('error.not_found'));
         $this->assertEquals('Invalid input', $translation->translate('error.invalid'));
     }
+
+    public function testSetInstanceAndGetInstance()
+    {
+        $loader = new MockTranslationLoader(['test' => 'value']);
+        $translation = new Translation($loader, 'en');
+
+        // Test setInstance
+        Translation::setInstance($translation);
+
+        // Test getInstance
+        $retrieved = Translation::getInstance();
+        $this->assertSame($translation, $retrieved);
+        $this->assertEquals('value', $retrieved->translate('test'));
+    }
+
+    public function testGetInstanceThrowsWhenNotSet()
+    {
+        // Clear any existing instance
+        $reflection = new ReflectionClass(Translation::class);
+        $property = $reflection->getProperty('instance');
+        $property->setAccessible(true);
+        $property->setValue(null, null);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Translation not initialized');
+
+        Translation::getInstance();
+    }
 }
