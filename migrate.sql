@@ -1,10 +1,14 @@
+<<<<<<< HEAD
 --- version 1
+=======
+## version 1
+>>>>>>> 625739b (upgade to php 8.4 and mysql 8.4)
 
 CREATE TABLE IF NOT EXISTS `items` (
     `item_id` INT UNSIGNED AUTO_INCREMENT,
     `name` VARCHAR(256) NOT NULL COMMENT "title",
-    `picture` TEXT DEFAULT '' COMMENT "absolute URL to product image",
-    `description` TEXT DEFAULT '' COMMENT "description",
+    `picture` TEXT COMMENT "absolute URL to product image",
+    `description` TEXT COMMENT "description",
     `min_porto` DECIMAL(10, 2) DEFAULT 0 COMMENT "minimum porto to be paid for this item",
     PRIMARY KEY (`item_id`)
 ) ENGINE = InnoDB DEFAULT CHARACTER SET = utf8 COLLATE = utf8_bin;
