@@ -4,16 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="1840bcf1-8a5a-45dd-9fb4-cd1c38958f1c" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/autoload.php" beforeDir="false" afterPath="$PROJECT_DIR$/autoload.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/config.php" beforeDir="false" afterPath="$PROJECT_DIR$/lib/config.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/db.php" beforeDir="false" afterPath="$PROJECT_DIR$/lib/db.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/items.php" beforeDir="false" afterPath="$PROJECT_DIR$/lib/items.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/template.php" beforeDir="false" afterPath="$PROJECT_DIR$/lib/template.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/translation.php" beforeDir="false" afterPath="$PROJECT_DIR$/lib/translation.php" afterDir="false" />
-    </list>
+    <list default="true" id="1840bcf1-8a5a-45dd-9fb4-cd1c38958f1c" name="Default" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -368,7 +359,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1514728249660</updated>
-      <workItem from="1764851522153" duration="1907000" />
+      <workItem from="1764851522153" duration="4105000" />
     </task>
     <servers />
   </component>

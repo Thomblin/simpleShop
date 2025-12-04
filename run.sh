@@ -152,7 +152,20 @@ test_coverage() {
         start
     fi
 
-    docker compose exec -T shop vendor/bin/phpunit --coverage-text
+    # Install dependencies if needed
+    if ! docker compose exec -T shop test -d vendor; then
+        print_info "Installing dependencies..."
+        docker compose exec -T shop composer install
+    fi
+
+    # Run tests with coverage (text output)
+    print_info "Running tests with coverage report..."
+    docker compose exec -T shop vendor/bin/phpunit --coverage-text --coverage-html coverage
+
+    if [ -d "coverage" ]; then
+        print_success "Coverage report generated in coverage/ directory"
+        print_info "Open coverage/index.html in your browser to view the HTML report"
+    fi
 }
 
 # Run specific test suite
