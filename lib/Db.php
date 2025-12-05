@@ -1,4 +1,7 @@
 <?php
+/**
+ * Database wrapper that provides methods for executing queries and managing transactions using mysqli.
+ */
 
 class Db implements DatabaseInterface
 {

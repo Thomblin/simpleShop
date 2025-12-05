@@ -1,4 +1,7 @@
 <?php
+/**
+ * Loads translation files from the translations directory for a given language code.
+ */
 
 class TranslationLoader
 {

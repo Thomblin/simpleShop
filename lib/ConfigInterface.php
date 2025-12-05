@@ -1,4 +1,7 @@
 <?php
+/**
+ * Interface for accessing application configuration including database credentials and shop settings.
+ */
 
 interface ConfigInterface
 {

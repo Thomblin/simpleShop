@@ -1,4 +1,7 @@
 <?php
+/**
+ * Autoloader that automatically loads class files from lib, models, services, and controllers directories.
+ */
 
 spl_autoload_register(function (string $className): void {
     // List of directories to search for class files

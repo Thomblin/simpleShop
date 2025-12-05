@@ -1,4 +1,7 @@
 <?php
+/**
+ * Processes order data from POST requests and creates Order objects with validated items and pricing.
+ */
 
 /**
  * Service for processing orders

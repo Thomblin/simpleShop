@@ -1,4 +1,7 @@
 <?php
+/**
+ * Represents a single item in an order with quantity, price, and stock information.
+ */
 
 /**
  * Value object representing a single item in an order

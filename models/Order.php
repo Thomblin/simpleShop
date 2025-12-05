@@ -1,4 +1,7 @@
 <?php
+/**
+ * Represents a complete order with items, customer information, and calculated totals.
+ */
 
 /**
  * Value object representing a complete order

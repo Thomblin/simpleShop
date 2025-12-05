@@ -1,4 +1,7 @@
 <?php
+/**
+ * Manages shop items, bundles, and options, and handles inventory updates when orders are placed.
+ */
 
 class Items
 {

@@ -1,4 +1,7 @@
 <?php
+/**
+ * Interface defining database operations for querying, executing statements, and managing transactions.
+ */
 
 interface DatabaseInterface
 {

@@ -1,4 +1,7 @@
 <?php
+/**
+ * Holds calculated price information including subtotal, shipping, and formatted totals.
+ */
 
 /**
  * Value object representing price calculation result

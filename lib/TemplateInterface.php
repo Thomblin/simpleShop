@@ -1,4 +1,7 @@
 <?php
+/**
+ * Interface for template rendering with variable assignment and file parsing.
+ */
 
 interface TemplateInterface
 {

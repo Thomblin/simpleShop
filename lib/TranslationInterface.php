@@ -1,4 +1,7 @@
 <?php
+/**
+ * Interface for translating text keys to localized strings.
+ */
 
 interface TranslationInterface
 {

@@ -1,4 +1,7 @@
 <?php
+/**
+ * Configuration class that stores database credentials, language settings, and shop parameters.
+ */
 
 class Config implements ConfigInterface
 {

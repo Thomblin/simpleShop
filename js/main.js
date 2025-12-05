@@ -1,6 +1,5 @@
 /**
- * SimpleShop JavaScript Module
- * Refactored for unit testing - exposes functions and state for testing
+ * Main JavaScript module that manages the shop's basket functionality, option selection, and order submission.
  */
 
 // Configuration object - populated by inline script in index.php before this file loads

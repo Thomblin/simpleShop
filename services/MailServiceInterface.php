@@ -1,4 +1,7 @@
 <?php
+/**
+ * Interface for sending emails with UTF-8 encoding support.
+ */
 
 interface MailServiceInterface
 {

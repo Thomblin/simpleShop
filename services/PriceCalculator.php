@@ -1,4 +1,7 @@
 <?php
+/**
+ * Calculates order totals, shipping costs, and formats prices with currency symbols.
+ */
 
 /**
  * Service for calculating prices and shipping costs

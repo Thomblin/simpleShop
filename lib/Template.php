@@ -1,4 +1,7 @@
 <?php
+/**
+ * Template engine that loads and renders PHP template files with variable substitution.
+ */
 
 class Template implements TemplateInterface
 {

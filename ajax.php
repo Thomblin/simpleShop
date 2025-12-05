@@ -1,4 +1,7 @@
 <?php
+/**
+ * Handles AJAX requests for order processing, price calculation, and email sending.
+ */
 
 if (!function_exists('json_encode')) {
     /**

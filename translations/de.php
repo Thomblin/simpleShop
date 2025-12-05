@@ -1,4 +1,7 @@
 <?php
+/**
+ * German translation strings for the shop interface.
+ */
 
 return array(
     'site.title' => 'simpleShop',

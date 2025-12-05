@@ -1,4 +1,7 @@
 <?php
+/**
+ * Provides translation functionality and exposes a global t() helper function for translating keys.
+ */
 
 class Translation implements TranslationInterface
 {

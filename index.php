@@ -1,4 +1,7 @@
 <?php
+/**
+ * Main entry point that renders the shop interface with product listings, basket functionality, and order form.
+ */
 include('autoload.php');
 
 $config = new Config();

@@ -1,4 +1,7 @@
 <?php
+/**
+ * Sends UTF-8 encoded emails and provides testing support by tracking sent messages.
+ */
 
 /**
  * Service for sending emails with UTF-8 support
