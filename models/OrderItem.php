@@ -82,15 +82,15 @@ class OrderItem
         array $selectedOptions = [],
         bool $outOfStock = false
     ) {
-        $this->itemId = (int)$itemId;
+        $this->itemId = (int) $itemId;
         $this->itemName = $itemName;
-        $this->bundleId = (int)$bundleId;
+        $this->bundleId = (int) $bundleId;
         $this->bundleName = $bundleName;
-        $this->amount = (int)$amount;
-        $this->price = (float)$price;
-        $this->bundleOptionId = $bundleOptionId ? (int)$bundleOptionId : null;
+        $this->amount = (int) $amount;
+        $this->price = (float) $price;
+        $this->bundleOptionId = $bundleOptionId ? (int) $bundleOptionId : null;
         $this->selectedOptions = $selectedOptions;
-        $this->outOfStock = (bool)$outOfStock;
+        $this->outOfStock = (bool) $outOfStock;
         $this->totalPrice = $this->amount * $this->price;
     }
 

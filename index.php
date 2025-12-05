@@ -28,8 +28,8 @@ Translation::setInstance($translation);
     <script type="text/javascript">
         // Configuration passed from PHP - must be defined before main.js loads
         var shopConfig = {
-            showInventory: <?php echo $config->showInventory ? 'true' : 'false'; ?>,
-            currency: '<?php echo Config::CURRENCY ?>',
+            showInventory: <?php echo $config->getShowInventory() ? 'true' : 'false'; ?>,
+            currency: '<?php echo $config->getCurrency() ?>',
             translations: {
                 times: '<?php echo t('times') ?>',
                 remove: '<?php echo t('remove') ?>',
@@ -72,31 +72,6 @@ Translation::setInstance($translation);
                 <section class="welcome-section">
                     <div class="intro">
                         <strong><?php echo t('site.welcome') ?></strong>
-                    </div>
-                </section>
-
-                <!-- Contact Form Card -->
-                <section class="contact-section">
-                    <div class="card">
-                        <h2 class="card-title"><?php echo t('site.contact') ?></h2>
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label for="name"><?php echo t('name') ?>:</label>
-                                <input type="text" id="name" name="name" class="form-input" />
-                            </div>
-                            <div class="form-group">
-                                <label for="email"><?php echo t('email') ?>*:</label>
-                                <input type="email" id="email" name="email" class="form-input" required />
-                            </div>
-                            <div class="form-group">
-                                <label for="street"><?php echo t('street') ?>*:</label>
-                                <input type="text" id="street" name="street" class="form-input" required />
-                            </div>
-                            <div class="form-group">
-                                <label for="zipcode_location"><?php echo t('zip_city') ?>*:</label>
-                                <input type="text" id="zipcode_location" name="zipcode_location" class="form-input" required />
-                            </div>
-                        </div>
                     </div>
                 </section>
 
@@ -159,7 +134,7 @@ Translation::setInstance($translation);
                                                 </select>
                                             </div>
                                             
-                                            <?php if ($config->showInventory): ?>
+                                            <?php if ($config->getShowInventory()): ?>
                                                 <div class="inventory-display" id="inventory_display_<?php echo $item['item_id'] ?>"></div>
                                             <?php endif; ?>
                                             
@@ -175,7 +150,7 @@ Translation::setInstance($translation);
 
                                         <?php if ($item['min_porto'] > 0): ?>
                                             <div class="shipping-info">
-                                                <?php echo t('porto') ?> (<?php echo t('min') ?> <?php echo number_format($item['min_porto'], 2, ',', '.') . ' ' . Config::CURRENCY ?>)
+                                                <?php echo t('porto') ?> (<?php echo t('min') ?> <?php echo number_format($item['min_porto'], 2, ',', '.') . ' ' . $config->getCurrency() ?>)
                                             </div>
                                         <?php endif; ?>
                                     </div>
@@ -196,9 +171,51 @@ Translation::setInstance($translation);
                 }
                 ?>
 
-                <!-- Form Comments and Porto -->
-                <section class="form-comments-section">
+                <!-- Basket and Total Section -->
+                <section class="total-section" style="display:none;">
                     <div class="card">
+                        <!-- Basket Display -->
+                        <div id="basket_display" style="display:none;">
+                            <div id="basket_items" class="basket-items"></div>
+                            <div class="basket-total">
+                                <strong><?php echo t('basket_total') ?>:</strong>
+                                <span id="basket_total" class="total-amount">0 <?php echo $config->getCurrency(); ?></span>
+                            </div>
+                            <hr class="section-divider" />
+                        </div>
+
+                        <!-- Total and Order -->
+                        <?php if ($hasPorto): ?>
+                            <div class="total-row">
+                                <span><?php echo t('porto') ?>:</span>
+                                <span id="porto" class="total-amount">0 <?php echo $config->getCurrency(); ?></span>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </section>
+                
+                <!-- Contact Form Card -->
+                <section class="contact-section">
+                    <div class="card">
+                        <h2 class="card-title"><?php echo t('site.contact') ?></h2>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="name"><?php echo t('name') ?>:</label>
+                                <input type="text" id="name" name="name" class="form-input" />
+                            </div>
+                            <div class="form-group">
+                                <label for="email"><?php echo t('email') ?>*:</label>
+                                <input type="email" id="email" name="email" class="form-input" required />
+                            </div>
+                            <div class="form-group">
+                                <label for="street"><?php echo t('street') ?>*:</label>
+                                <input type="text" id="street" name="street" class="form-input" required />
+                            </div>
+                            <div class="form-group">
+                                <label for="zipcode_location"><?php echo t('zip_city') ?>*:</label>
+                                <input type="text" id="zipcode_location" name="zipcode_location" class="form-input" required />
+                            </div>
+                        </div>
                         <h2 class="card-title"><?php echo t('form.comments') ?></h2>
                         <div class="form-group">
                             <textarea name="comment" class="form-input" rows="4"></textarea>
@@ -209,29 +226,6 @@ Translation::setInstance($translation);
                                     <input type="checkbox" name="collectionByTheCustomer" class="price" />
                                     <?php echo t('form.will_collect_no_porto') ?>
                                 </label>
-                            </div>
-                        <?php endif; ?>
-                    </div>
-                </section>
-
-                <!-- Basket and Total Section -->
-                <section class="total-section" style="display:none;">
-                    <div class="card">
-                        <!-- Basket Display -->
-                        <div id="basket_display" style="display:none;">
-                            <div id="basket_items" class="basket-items"></div>
-                            <div class="basket-total">
-                                <strong><?php echo t('basket_total') ?>:</strong>
-                                <span id="basket_total" class="total-amount">0 <?php echo Config::CURRENCY; ?></span>
-                            </div>
-                            <hr class="section-divider" />
-                        </div>
-
-                        <!-- Total and Order -->
-                        <?php if ($hasPorto): ?>
-                            <div class="total-row">
-                                <span><?php echo t('porto') ?>:</span>
-                                <span id="porto" class="total-amount">0 <?php echo Config::CURRENCY; ?></span>
                             </div>
                         <?php endif; ?>
                         <button type="button" class="btn btn-primary btn-large" onclick="preview();">

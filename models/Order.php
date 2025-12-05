@@ -55,8 +55,8 @@ class Order
     {
         $this->items = $items;
         $this->customer = $customer;
-        $this->porto = (float)$porto;
-        $this->collectionByCustomer = (bool)$collectionByCustomer;
+        $this->porto = (float) $porto;
+        $this->collectionByCustomer = (bool) $collectionByCustomer;
 
         // Calculate subtotal and check for out of stock items
         $this->subtotal = 0.0;

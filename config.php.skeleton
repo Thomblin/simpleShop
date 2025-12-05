@@ -1,0 +1,32 @@
+<?php
+
+/**
+ * Configuration file for the shop
+ * Copy this file to config.php and adjust the values to match your environment
+ */
+
+return [
+    // Database configuration
+    'mysql_host' => 'shop_mysql',
+    'mysql_user' => 'user',
+    'mysql_password' => 'user',
+    'mysql_database' => 'shop',
+    
+    // Mail configuration
+    'mail_address' => '',
+    'mail_user' => '',
+    
+    // Shop configuration
+    'currency' => '€',
+    'language' => 'de',
+    'show_inventory' => true,
+    
+    // Customer form fields (REQUIRED or OPTIONAL)
+    'allowed_textfields' => [
+        'name' => 1,
+        'email' => 1,
+        'street' => 1,
+        'zipcode_location' => 1,
+        'comment' => 0,
+    ],
+];

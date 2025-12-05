@@ -55,7 +55,7 @@ class OrderService
                 foreach ($item['option_groups'] as $group) {
                     $fieldName = 'item_' . $item['item_id'] . '_option_' . $group['group_id'];
                     if (isset($postData[$fieldName]) && $postData[$fieldName] !== '') {
-                        $selectedOptionByGroup[$group['group_id']] = (int)$postData[$fieldName];
+                        $selectedOptionByGroup[$group['group_id']] = (int) $postData[$fieldName];
                     }
                 }
             }
@@ -128,7 +128,7 @@ class OrderService
         float &$porto
     ): void {
         foreach ($postValue as $boId => $rawAmount) {
-            $amount = (int)$rawAmount;
+            $amount = (int) $rawAmount;
 
             $effective = $this->determineEffectiveOptions($bundle, $item, $boId, $selectedOptionByGroup);
 
@@ -156,11 +156,11 @@ class OrderService
 
                 $orderItems[] = $orderItem;
 
-                $porto = max($porto, (float)$item['min_porto']);
+                $porto = max($porto, (float) $item['min_porto']);
 
                 $orders[] = [
                     'amount' => $amount,
-                    'bundle_option_id' => (int)$boId
+                    'bundle_option_id' => (int) $boId
                 ];
             }
         }
@@ -188,7 +188,7 @@ class OrderService
         bool &$anyOutOfStock,
         float &$porto
     ): void {
-        $amount = (int)$postValue;
+        $amount = (int) $postValue;
 
         $effective = $this->determineEffectiveOptions($bundle, $item, null, $selectedOptionByGroup);
 
@@ -216,7 +216,7 @@ class OrderService
 
             $orderItems[] = $orderItem;
 
-            $porto = max($porto, (float)$item['min_porto']);
+            $porto = max($porto, (float) $item['min_porto']);
 
             $order = ['amount' => $amount];
             // bundle_option_id is now required - every bundle must have at least one bundle_option
@@ -255,18 +255,18 @@ class OrderService
                 foreach ($group['options'] as $opt) {
                     // Check if this option matches our criteria
                     $matchesBundle = $opt['bundle_id'] == $bundle['bundle_id'];
-                    $matchesBundleOption = $bundleOptionId && isset($opt['bundle_option_id']) && (int)$opt['bundle_option_id'] === (int)$bundleOptionId;
+                    $matchesBundleOption = $bundleOptionId && isset($opt['bundle_option_id']) && (int) $opt['bundle_option_id'] === (int) $bundleOptionId;
                     $matchesSelectedOption = isset($selectedOptionByGroup[$group['group_id']]) && $opt['option_id'] == $selectedOptionByGroup[$group['group_id']];
 
                     if ($matchesBundle && ($matchesBundleOption || $matchesSelectedOption)) {
-                        $effective['price'] = (float)$opt['price'];
-                        $effective['min_count'] = (int)$opt['min_count'];
-                        $effective['max_count'] = (int)$opt['max_count'];
-                        $effective['inventory'] = (int)$opt['inventory'];
+                        $effective['price'] = (float) $opt['price'];
+                        $effective['min_count'] = (int) $opt['min_count'];
+                        $effective['max_count'] = (int) $opt['max_count'];
+                        $effective['inventory'] = (int) $opt['inventory'];
                         $effective['option_description'] = !empty($opt['option_description']) ? $opt['option_description'] : $opt['option_name'];
 
                         if (isset($opt['bundle_option_id'])) {
-                            $effective['bundle_option_id'] = (int)$opt['bundle_option_id'];
+                            $effective['bundle_option_id'] = (int) $opt['bundle_option_id'];
                         }
                         break 2;
                     }
@@ -280,11 +280,11 @@ class OrderService
                 throw new RuntimeException("Bundle {$bundle['bundle_id']} has no bundle_options. Every bundle must have at least one bundle_option.");
             }
             $firstOption = $bundleOptions[0];
-            $effective['price'] = (float)$firstOption['price'];
-            $effective['min_count'] = (int)$firstOption['min_count'];
-            $effective['max_count'] = (int)$firstOption['max_count'];
-            $effective['inventory'] = (int)$firstOption['inventory'];
-            $effective['bundle_option_id'] = (int)$firstOption['bundle_option_id'];
+            $effective['price'] = (float) $firstOption['price'];
+            $effective['min_count'] = (int) $firstOption['min_count'];
+            $effective['max_count'] = (int) $firstOption['max_count'];
+            $effective['inventory'] = (int) $firstOption['inventory'];
+            $effective['bundle_option_id'] = (int) $firstOption['bundle_option_id'];
         }
 
         return $effective;

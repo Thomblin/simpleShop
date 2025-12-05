@@ -22,7 +22,7 @@ class EmailSendingTest extends TestCase
         $this->dbHelper->cleanup();
         $this->db = new Db($this->dbHelper->getConnection());
         $this->items = new Items($this->db);
-        
+
         // Clear any previously sent emails
         MailService::clearSentEmails();
     }
@@ -66,20 +66,13 @@ class EmailSendingTest extends TestCase
         ];
         $_GET = ['mail' => '1'];
 
-        // Mock Config values
-        $originalMailAddress = Config::MAIL_ADDRESS;
-        $originalMailUser = Config::MAIL_USER;
-        
-        // Use reflection to set test values (since they're constants, we'll use a different approach)
-        // For now, we'll test with the actual Config values if they're set, or use test values
-        
         // Capture output
         ob_start();
-        
+
         // Include ajax.php (we need to simulate the request)
         // Since we can't easily modify constants, we'll test the MailService directly
         // and verify the email sending logic
-        
+
         // Create a template for the email
         $mail = new Template();
         $mail->add('name', 'John Doe');
@@ -95,16 +88,17 @@ class EmailSendingTest extends TestCase
                 'out_of_stock' => false
             ]
         ]);
+        $mail->add('currency', '€');
         $mail->add('porto', 5.50);
         $mail->add('total', 65.48);
-        
+
         $text = nl2br($mail->parse('mail.php', false));
-        
+
         // Send emails using MailService (simulating ajax.php behavior)
         $mailService = new MailService();
         $mailService->send('admin@example.com', t('mail.subject'), $text, 'admin@example.com', 'Shop Admin');
         $mailService->send('john@example.com', t('mail.subject'), $text, 'admin@example.com', 'Shop Admin');
-        
+
         ob_end_clean();
 
         // Verify emails were sent
@@ -130,7 +124,7 @@ class EmailSendingTest extends TestCase
     public function testEmailContainsOrderDetails()
     {
         MailService::clearSentEmails();
-        
+
         $mail = new Template();
         $mail->add('name', 'Jane Smith');
         $mail->add('email', 'jane@example.com');
@@ -150,11 +144,12 @@ class EmailSendingTest extends TestCase
                 'out_of_stock' => false
             ]
         ]);
+        $mail->add('currency', '€');
         $mail->add('porto', 7.50);
         $mail->add('total', 64.00);
-        
+
         $text = nl2br($mail->parse('mail.php', false));
-        
+
         $mailService = new MailService();
         $mailService->send('jane@example.com', t('mail.subject'), $text, 'shop@example.com', 'Shop Name');
 
@@ -177,10 +172,10 @@ class EmailSendingTest extends TestCase
     public function testEmailNotSentWhenOrderFails()
     {
         MailService::clearSentEmails();
-        
+
         // Simulate a failed order (out of stock)
         // In this case, emails should not be sent
-        
+
         // Verify no emails were sent
         $sentEmails = MailService::getSentEmails();
         $this->assertCount(0, $sentEmails, 'No emails should be sent when order fails');
@@ -189,13 +184,13 @@ class EmailSendingTest extends TestCase
     public function testEmailSubjectIsCorrect()
     {
         MailService::clearSentEmails();
-        
+
         $mailService = new MailService();
         $mailService->send('test@example.com', t('mail.subject'), '<p>Test</p>', 'from@example.com', 'Test Sender');
 
         $sentEmails = MailService::getSentEmails();
         $this->assertCount(1, $sentEmails);
-        
+
         $email = $sentEmails[0];
         $this->assertEquals(t('mail.subject'), $email['subject']);
     }
@@ -203,13 +198,13 @@ class EmailSendingTest extends TestCase
     public function testEmailFromAddressIsCorrect()
     {
         MailService::clearSentEmails();
-        
+
         $mailService = new MailService();
         $mailService->send('test@example.com', 'Test', '<p>Test</p>', 'shop@example.com', 'Shop Name');
 
         $sentEmails = MailService::getSentEmails();
         $email = $sentEmails[0];
-        
+
         $this->assertEquals('shop@example.com', $email['fromEmail']);
         $this->assertEquals('Shop Name', $email['fromName']);
     }

@@ -2,6 +2,9 @@
 /vendor/
 composer.lock
 
+# Configuration
+config.php
+
 # PHPUnit
 /coverage/
 .phpunit.result.cache

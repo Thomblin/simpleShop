@@ -66,7 +66,7 @@ $price = 0;
 
 $mail = new Template();
 
-foreach ($config->allowedTextfields as $name => $required) {
+foreach ($config->getAllowedTextfields() as $name => $required) {
     if (!empty($_POST[$name])) {
         $mail->add($name, $_POST[$name]);
     } elseif (Config::REQUIRED == $required) {
@@ -256,14 +256,15 @@ foreach ($shopItems as $item) {
 }
 
 $mail->add('selected_items', $selected_items);
+$mail->add('currency', $config->getCurrency());
 
 if (isset($_POST['collectionByTheCustomer'])) {
     $porto = 0;
 }
 
 $price += $porto;
-$result['price'] = number_format($price, 2, ',', '.') . ' ' . Config::CURRENCY;
-$result['porto'] = number_format($porto, 2, ',', '.') . ' ' . Config::CURRENCY;
+$result['price'] = number_format($price, 2, ',', '.') . ' ' . $config->getCurrency();
+$result['porto'] = number_format($porto, 2, ',', '.') . ' ' . $config->getCurrency();
 $result['order'] = $anyOutOfStock ? 0 : 1;
 
 if (!isset($_GET['price_only'])) {
@@ -297,8 +298,8 @@ if (isset($_GET['mail']) && !isset($result['error'])) {
 
         // Use MailService for sending emails
         $mailService = new MailService();
-        $mailService->send(Config::MAIL_ADDRESS, t('mail.subject'), $text, Config::MAIL_ADDRESS, Config::MAIL_USER);
-        $mailService->send($_POST['email'], t('mail.subject'), $text, Config::MAIL_ADDRESS, Config::MAIL_USER);
+        $mailService->send($config->getMailAddress(), t('mail.subject'), $text, $config->getMailAddress(), $config->getMailUser());
+        $mailService->send($_POST['email'], t('mail.subject'), $text, $config->getMailAddress(), $config->getMailUser());
     }
     ;
 }

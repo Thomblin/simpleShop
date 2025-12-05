@@ -40,7 +40,7 @@ class PriceCalculator
 
         foreach ($items as $item) {
             if (isset($item['min_porto'])) {
-                $porto = max($porto, (float)$item['min_porto']);
+                $porto = max($porto, (float) $item['min_porto']);
             }
         }
 

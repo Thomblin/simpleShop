@@ -47,8 +47,8 @@ class PriceResult
      */
     public function __construct(float $subtotal, float $porto, string $currency = '€')
     {
-        $this->subtotal = (float)$subtotal;
-        $this->porto = (float)$porto;
+        $this->subtotal = (float) $subtotal;
+        $this->porto = (float) $porto;
         $this->total = $this->subtotal + $this->porto;
 
         $this->subtotalFormatted = $this->formatPrice($this->subtotal, $currency);
