@@ -89,7 +89,7 @@ class ConfigTest extends TestCase
     public function testLoadConfigFromSkeletonFile()
     {
         // Create a temporary config file from the skeleton
-        $skeletonPath = __DIR__ . '/../../config.php.skeleton';
+        $skeletonPath = __DIR__ . '/../../config/config.php.skeleton';
         $tmpConfigPath = sys_get_temp_dir() . '/test_config_' . uniqid() . '.php';
 
         $this->assertFileExists($skeletonPath, 'config.php.skeleton must exist');

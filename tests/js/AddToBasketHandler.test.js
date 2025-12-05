@@ -3,7 +3,7 @@
  * Tests the logic for handling quantity 0, missing bundleId, etc.
  */
 
-require('../../js/main.js');
+require('../../public/js/main.js');
 
 describe('Add to Basket Handler Logic', () => {
     let SimpleShop;
@@ -11,7 +11,7 @@ describe('Add to Basket Handler Logic', () => {
 
     beforeEach(() => {
         if (typeof require !== 'undefined') {
-            SimpleShop = require('../../js/main.js');
+            SimpleShop = require('../../public/js/main.js');
         } else {
             SimpleShop = (typeof window !== 'undefined' && window.SimpleShop) || 
                          (typeof global !== 'undefined' && global.SimpleShop);

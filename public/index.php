@@ -2,7 +2,7 @@
 /**
  * Main entry point that renders the shop interface with product listings, basket functionality, and order form.
  */
-include('autoload.php');
+include(__DIR__ . '/../autoload.php');
 
 $config = new Config();
 $db = new Db($config);

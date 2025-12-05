@@ -2,7 +2,7 @@
  * Unit tests for ApiService
  */
 
-const SimpleShop = require('../../js/main.js');
+const SimpleShop = require('../../public/js/main.js');
 
 describe('ApiService', () => {
     let ApiService;

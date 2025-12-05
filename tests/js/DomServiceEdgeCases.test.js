@@ -3,14 +3,14 @@
  * Tests for when jQuery is not available or elements are missing
  */
 
-const SimpleShop = require('../../js/main.js');
+const SimpleShop = require('../../public/js/main.js');
 
 describe('DomService Edge Cases', () => {
     let SimpleShop;
     let original$;
 
     beforeEach(() => {
-        SimpleShop = require('../../js/main.js');
+        SimpleShop = require('../../public/js/main.js');
         original$ = global.$;
         jest.clearAllMocks();
     });

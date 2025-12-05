@@ -15,12 +15,12 @@
     </testsuites>
     <source>
         <include>
-            <directory suffix=".php">lib</directory>
-            <directory suffix=".php">models</directory>
-            <directory suffix=".php">services</directory>
+            <directory suffix=".php">src/Config</directory>
+            <directory suffix=".php">src/Models</directory>
+            <directory suffix=".php">src/Services</directory>
         </include>
         <exclude>
-            <file>lib/translation.php</file>
+            <file>src/Config/Translation.php</file>
         </exclude>
     </source>
     <coverage>

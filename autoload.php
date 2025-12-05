@@ -6,10 +6,11 @@
 spl_autoload_register(function (string $className): void {
     // List of directories to search for class files
     $directories = [
-        __DIR__ . '/lib/',
-        __DIR__ . '/models/',
-        __DIR__ . '/services/',
-        __DIR__ . '/controllers/'
+        __DIR__ . '/src/Config/',
+        __DIR__ . '/src/Models/',
+        __DIR__ . '/src/Services/',
+        __DIR__ . '/src/Controllers/',
+        __DIR__ . '/src/Views/'
     ];
 
     // Filename matches class name (PascalCase)

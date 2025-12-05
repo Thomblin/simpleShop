@@ -3,13 +3,13 @@
  * Tests the full flow of option change handling
  */
 
-const SimpleShop = require('../../js/main.js');
+const SimpleShop = require('../../public/js/main.js');
 
 describe('OptionHandler Integration - handleChange', () => {
     let SimpleShop;
 
     beforeEach(() => {
-        SimpleShop = require('../../js/main.js');
+        SimpleShop = require('../../public/js/main.js');
         jest.clearAllMocks();
 
         // Set up shopConfig

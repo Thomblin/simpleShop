@@ -2,7 +2,7 @@
  * Unit tests for DomService
  */
 
-const SimpleShop = require('../../js/main.js');
+const SimpleShop = require('../../public/js/main.js');
 
 describe('DomService', () => {
     let DomService;

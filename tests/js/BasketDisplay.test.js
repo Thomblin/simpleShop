@@ -2,14 +2,14 @@
  * Unit tests for BasketDisplay
  */
 
-require('../../js/main.js');
+require('../../public/js/main.js');
 
 describe('BasketDisplay', () => {
     let SimpleShop;
 
     beforeEach(() => {
         if (typeof require !== 'undefined') {
-            SimpleShop = require('../../js/main.js');
+            SimpleShop = require('../../public/js/main.js');
         } else {
             SimpleShop = (typeof window !== 'undefined' && window.SimpleShop) ||
                 (typeof global !== 'undefined' && global.SimpleShop);

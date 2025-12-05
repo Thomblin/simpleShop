@@ -3,7 +3,7 @@
 composer.lock
 
 # Configuration
-config.php
+config/config.php
 
 # PHPUnit
 /coverage/

@@ -21,7 +21,7 @@ class Config implements ConfigInterface
     public $language;
     public $showInventory;
 
-    public function __construct(string $configFile = __DIR__ . '/../config.php')
+    public function __construct(string $configFile = __DIR__ . '/../../config/config.php')
     {
         if (file_exists($configFile)) {
             $this->config = require $configFile;

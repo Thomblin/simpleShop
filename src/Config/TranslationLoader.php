@@ -15,7 +15,7 @@ class TranslationLoader
      */
     public function __construct(?string $translationsPath = null)
     {
-        $this->translationsPath = $translationsPath ?: __DIR__ . '/../translations/';
+        $this->translationsPath = $translationsPath ?: __DIR__ . '/../../translations/';
     }
 
     /**

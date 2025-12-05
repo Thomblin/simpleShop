@@ -2,7 +2,7 @@
  * Unit tests for FormService
  */
 
-const SimpleShop = require('../../js/main.js');
+const SimpleShop = require('../../public/js/main.js');
 
 describe('FormService', () => {
     let FormService;

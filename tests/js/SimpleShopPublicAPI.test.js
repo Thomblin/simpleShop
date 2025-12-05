@@ -4,14 +4,14 @@
  * calculateTotalWithPorto, showSuccessMessage, and updateBasketDisplay
  */
 
-const SimpleShop = require('../../js/main.js');
+const SimpleShop = require('../../public/js/main.js');
 
 describe('SimpleShop Public API - Additional Functions', () => {
     let SimpleShop;
     let mockPostCallback;
 
     beforeEach(() => {
-        SimpleShop = require('../../js/main.js');
+        SimpleShop = require('../../public/js/main.js');
         SimpleShop.clearBasket();
         jest.clearAllMocks();
 

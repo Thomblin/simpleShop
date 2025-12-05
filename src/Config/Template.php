@@ -22,7 +22,7 @@ class Template implements TemplateInterface
      */
     public function __construct(?string $basePath = null)
     {
-        $this->basePath = $basePath ?: __DIR__ . '/../';
+        $this->basePath = $basePath ?: __DIR__ . '/../../';
     }
 
     /**

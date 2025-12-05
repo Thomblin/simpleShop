@@ -3,13 +3,13 @@
  * Tests for empty basket, animation, and edge cases
  */
 
-const SimpleShop = require('../../js/main.js');
+const SimpleShop = require('../../public/js/main.js');
 
 describe('BasketDisplay Edge Cases', () => {
     let SimpleShop;
 
     beforeEach(() => {
-        SimpleShop = require('../../js/main.js');
+        SimpleShop = require('../../public/js/main.js');
         SimpleShop.clearBasket();
         jest.clearAllMocks();
 

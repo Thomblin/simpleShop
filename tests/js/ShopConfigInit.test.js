@@ -2,7 +2,7 @@
  * Tests for shopConfig initialization edge cases
  */
 
-require('../../js/main.js');
+require('../../public/js/main.js');
 
 describe('shopConfig Initialization', () => {
     test('should initialize translations when shopConfig exists but translations is missing', () => {
@@ -10,7 +10,7 @@ describe('shopConfig Initialization', () => {
         // We can't directly test the initialization code since it runs on module load
         // But we can verify that the translations are available after module loads
         
-        const SimpleShop = require('../../js/main.js');
+        const SimpleShop = require('../../public/js/main.js');
         const config = SimpleShop.getConfig();
         
         // Verify translations object exists

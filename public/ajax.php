@@ -48,7 +48,7 @@ if (!function_exists('json_encode')) {
     }
 }
 
-include('autoload.php');
+include(__DIR__ . '/../autoload.php');
 $config = new Config();
 $db = new Db($config);
 $items = new Items($db);

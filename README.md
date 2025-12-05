@@ -34,16 +34,16 @@ A lightweight, self-hosted e‑commerce shop for small businesses and side proje
        - `docker compose exec -T shop_mysql sh -c "mysql -uuser -puser shop < /var/lib/mysql/example_seed_shop.sql"`
 
 3. Configure the application
-   - Copy `config.php.skeleton` to `config.php`:
-     - `cp config.php.skeleton config.php`
-   - Edit `config.php` and adjust all configuration values:
+   - Copy `config/config.php.skeleton` to `config/config.php`:
+     - `cp config/config.php.skeleton config/config.php`
+   - Edit `config/config.php` and adjust all configuration values:
      - Database credentials (host, user, password, database name)
      - Email addresses (shop owner email and display name)
      - Currency symbol
      - Language preference ('de' or 'en')
      - Customer form field requirements
      - Inventory display settings
-   - The `config.php` file will be automatically loaded by `lib/Config.php`
+   - The `config/config.php` file will be automatically loaded by `src/Config/Config.php`
    - it already contains the values needed to run with the local docker stack
 
 4. Configure translations (optional)
@@ -72,3 +72,23 @@ A lightweight, self-hosted e‑commerce shop for small businesses and side proje
 ## Examples
 
 - Execute sql statements in example_seed_shop.sql or example_seed_langwacken.sql to create a pre-filled database
+
+## Directory Structure
+
+- `.github/` – GitHub configuration and workflow files (CI/CD)
+- `public/` – Public web root (frontend)
+  - `css/` – Stylesheets
+  - `js/` – JavaScript assets
+  - `images/` – Static images and icons
+  - `index.php` – Main application entry point
+  - `ajax.php` – AJAX request handler
+- `src/` – PHP backend source code (business logic, services, models))
+  - `Config/`
+  - `Models/`
+  - `Services/`
+- `config/`
+  - `config.php.skeleton` - configuration file
+- `translations/`
+- `docker/` – Docker configuration and image definitions
+- `tests/` – Automated test suites (PHP and JavaScript)
+- `vendor/`

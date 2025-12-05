@@ -3,7 +3,7 @@
  */
 
 // Load the main.js file - SimpleShop will be available as a global
-require('../../js/main.js');
+require('../../public/js/main.js');
 
 describe('BasketLogic', () => {
     let SimpleShop;
@@ -12,7 +12,7 @@ describe('BasketLogic', () => {
         // Get reference to SimpleShop module
         // In browser: window.SimpleShop, in Node: global.SimpleShop or require
         if (typeof require !== 'undefined') {
-            SimpleShop = require('../../js/main.js');
+            SimpleShop = require('../../public/js/main.js');
         } else {
             SimpleShop = (typeof window !== 'undefined' && window.SimpleShop) || 
                          (typeof global !== 'undefined' && global.SimpleShop);
