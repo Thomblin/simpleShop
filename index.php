@@ -23,6 +23,8 @@ Translation::setInstance($translation);
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
     <link rel="icon" type="image/x-icon" href="favicon.ico" />
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.svg" />
+    <meta name="theme-color" content="#880000" />
     <link rel="stylesheet" href="css/style.css" />
     <script src="http://code.jquery.com/jquery-1.4.2.min.js"></script>
     <script type="text/javascript">
@@ -60,7 +62,7 @@ Translation::setInstance($translation);
         <header class="site-header">
             <div class="container">
                 <a href="../index.php" class="logo">
-                    <img src="" alt="<?php echo t('site.title') ?>" />
+                    <img src="images/logo.svg" alt="<?php echo t('site.title') ?>" />
                     <h1><?php echo t('site.title') ?></h1>
                 </a>
             </div>

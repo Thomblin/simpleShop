@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" width="180" height="180">
+  <!-- Apple touch icon - shopping cart in pastel glyph style -->
+  <rect width="180" height="180" fill="#880000" rx="20"/>
+  
+  <!-- Cart body -->
+  <path d="M33.75 33.75 L45 33.75 L61.875 112.5 L140.625 112.5 L157.5 56.25 L56.25 56.25" 
+        stroke="#ffffff" 
+        stroke-width="11.25" 
+        stroke-linecap="round" 
+        stroke-linejoin="round" 
+        fill="none"/>
+  
+  <!-- Cart wheels -->
+  <circle cx="67.5" cy="140.625" r="11.25" fill="#ffffff"/>
+  <circle cx="129.375" cy="140.625" r="11.25" fill="#ffffff"/>
+  
+  <!-- Cart grid pattern -->
+  <line x1="73.125" y1="56.25" x2="78.75" y2="112.5" stroke="#ffffff" stroke-width="8.4375"/>
+  <line x1="95.625" y1="56.25" x2="101.25" y2="112.5" stroke="#ffffff" stroke-width="8.4375"/>
+  <line x1="118.125" y1="56.25" x2="123.75" y2="112.5" stroke="#ffffff" stroke-width="8.4375"/>
+</svg>

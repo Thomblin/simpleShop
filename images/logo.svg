@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40">
+  <!-- Background -->
+  <rect width="40" height="40" fill="#880000" rx="4"/>
+  
+  <!-- Shopping cart icon -->
+  <g transform="translate(8, 8)">
+    <!-- Cart body -->
+    <path d="M2 2 L4 2 L7 18 L22 18 L25 8 L6 8" 
+          stroke="#ffffff" 
+          stroke-width="1.5" 
+          stroke-linecap="round" 
+          stroke-linejoin="round" 
+          fill="none"/>
+    
+    <!-- Cart wheels -->
+    <circle cx="8.5" cy="22" r="1.5" fill="#ffffff"/>
+    <circle cx="20" cy="22" r="1.5" fill="#ffffff"/>
+    
+    <!-- Cart grid pattern -->
+    <line x1="9" y1="8" x2="10" y2="18" stroke="#ffffff" stroke-width="1.2"/>
+    <line x1="14" y1="8" x2="15" y2="18" stroke="#ffffff" stroke-width="1.2"/>
+    <line x1="18" y1="8" x2="19" y2="18" stroke="#ffffff" stroke-width="1.2"/>
+  </g>
+</svg>
