@@ -246,6 +246,65 @@ describe('SimpleShop Public API - Additional Functions', () => {
                 SimpleShop.showSuccessMessage('item1');
             }).not.toThrow();
         });
+
+        test('should handle element without find method', () => {
+            const mockElement = {
+                fadeIn: jest.fn(),
+                fadeOut: jest.fn(),
+                html: jest.fn()
+            };
+            SimpleShop.DomService.get = jest.fn().mockReturnValue(mockElement);
+
+            jest.useFakeTimers();
+            SimpleShop.showSuccessMessage('item1', false);
+
+            expect(mockElement.html).toHaveBeenCalledWith('✓ <span class="success-text">Added!</span>');
+
+            jest.useRealTimers();
+        });
+
+        test('should update existing success-text span when available', () => {
+            const mockSuccessText = {
+                length: 1,
+                text: jest.fn()
+            };
+            const mockElement = {
+                fadeIn: jest.fn(),
+                fadeOut: jest.fn(),
+                html: jest.fn(),
+                find: jest.fn().mockReturnValue(mockSuccessText)
+            };
+            SimpleShop.DomService.get = jest.fn().mockReturnValue(mockElement);
+
+            jest.useFakeTimers();
+            SimpleShop.showSuccessMessage('item1', true);
+
+            expect(mockElement.find).toHaveBeenCalledWith('.success-text');
+            expect(mockSuccessText.text).toHaveBeenCalledWith('Updated!');
+            expect(mockElement.html).not.toHaveBeenCalled();
+
+            jest.useRealTimers();
+        });
+
+        test('should create success-text span when find returns empty', () => {
+            const mockSuccessText = {
+                length: 0
+            };
+            const mockElement = {
+                fadeIn: jest.fn(),
+                fadeOut: jest.fn(),
+                html: jest.fn(),
+                find: jest.fn().mockReturnValue(mockSuccessText)
+            };
+            SimpleShop.DomService.get = jest.fn().mockReturnValue(mockElement);
+
+            jest.useFakeTimers();
+            SimpleShop.showSuccessMessage('item1', false);
+
+            expect(mockElement.html).toHaveBeenCalledWith('✓ <span class="success-text">Added!</span>');
+
+            jest.useRealTimers();
+        });
     });
 
     describe('updateBasketDisplay', () => {
