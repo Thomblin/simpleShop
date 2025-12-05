@@ -246,6 +246,7 @@ var SimpleShop = (function () {
         render: function () {
             if (basket.length === 0) {
                 DomService.hide('#basket_display');
+                DomService.hide('.total-section');
                 return;
             }
 
@@ -256,14 +257,7 @@ var SimpleShop = (function () {
 
             DomService.html('#basket_items', basketHtml);
             DomService.show('#basket_display');
-
-            // Highlight basket briefly
-            var $basket = DomService.get('#basket_display');
-            if ($basket && $basket.stop && $basket.css && $basket.animate) {
-                $basket.stop().css('background-color', '#e8f5e9').animate({
-                    backgroundColor: '#ddd'
-                }, 800);
-            }
+            DomService.show('.total-section');
         }
     };
 
@@ -491,7 +485,27 @@ var SimpleShop = (function () {
         updateBasketTotal: function () {
             var total = BasketLogic.calculateTotal();
             DomService.html('#basket_total', Utils.formatCurrency(total));
+            this.updateStickyBasket();
             this.calculateTotalWithPorto();
+        },
+
+        // Update sticky basket icon
+        updateStickyBasket: function () {
+            var basketCount = basket.length;
+            var $stickyBasket = DomService.get('#sticky_basket');
+            var $basketCount = DomService.get('#basket_count');
+
+            if ($basketCount) {
+                $basketCount.text(basketCount);
+            }
+
+            if ($stickyBasket) {
+                if (basketCount > 0) {
+                    $stickyBasket.show();
+                } else {
+                    $stickyBasket.hide();
+                }
+            }
         },
 
         // Preview and mail functions
@@ -563,12 +577,22 @@ var SimpleShop = (function () {
         // Success message
         showSuccessMessage: function (itemId, isUpdate) {
             var $successMsg = DomService.get('#success_' + itemId);
-            if ($successMsg && $successMsg.fadeIn && $successMsg.fadeOut && $successMsg.html) {
-                // Update message text and color
+            if ($successMsg && $successMsg.fadeIn && $successMsg.fadeOut) {
+                // Update message text
                 var messageText = isUpdate ? shopConfig.translations.updatedToBasket : shopConfig.translations.addedToBasket;
-                var messageColor = isUpdate ? '#0000ff' : '#008800';
-                $successMsg.html('✓ ' + messageText);
-                $successMsg.css('color', messageColor);
+
+                // Try to find and update the success-text span, or update the whole message
+                if ($successMsg.find && typeof $successMsg.find === 'function') {
+                    var $successText = $successMsg.find('.success-text');
+                    if ($successText && $successText.length) {
+                        $successText.text(messageText);
+                    } else {
+                        $successMsg.html('✓ <span class="success-text">' + messageText + '</span>');
+                    }
+                } else {
+                    // Fallback for test environment or when find is not available
+                    $successMsg.html('✓ <span class="success-text">' + messageText + '</span>');
+                }
 
                 $successMsg.fadeIn(200);
                 setTimeout(function () {
@@ -618,22 +642,55 @@ $(document).ready(function () {
         SimpleShop.calculateTotalWithPorto();
     });
 
+    // Handle sticky basket toggle
+    $("body").delegate(".basket-toggle", "click", function () {
+        var $basketDisplay = $('#basket_display');
+        var $totalSection = $('.total-section');
+
+        if ($basketDisplay.is(':visible')) {
+            $basketDisplay.slideUp(300);
+        } else {
+            $basketDisplay.slideDown(300);
+            // Scroll to total section (which contains the basket)
+            if ($totalSection.length) {
+                $('html, body').animate({
+                    scrollTop: $totalSection.offset().top - 100
+                }, 300);
+            }
+        }
+    });
+
     // Handle add to basket button
     $("body").delegate(".add-to-basket-btn", "click", function () {
         var $button = $(this);
         var itemId = $button.attr('data-item-id');
-        var itemName = $('.item[data-item-id="' + itemId + '"] .head').text();
+        var $productCard = $('.product-card[data-item-id="' + itemId + '"]');
+        var itemName = $productCard.find('.product-title').text();
 
-        // Get selected option
-        var selectedOption = $('.item[data-item-id="' + itemId + '"] .option-select option:selected');
-        var bundleId = selectedOption.attr('data-bundle-id');
-        var bundleOptionId = selectedOption.attr('data-bundle-option-id');
-        var optionLabel = selectedOption.text();
+        // Get selected option - find the first option with a bundle ID
+        var bundleId = null;
+        var bundleOptionId = null;
+        var optionLabel = '';
+        var price = 0;
+
+        $productCard.find('.option-select').each(function () {
+            var $select = $(this);
+            var $selectedOption = $select.find('option:selected');
+            var tempBundleId = $selectedOption.attr('data-bundle-id');
+
+            if (tempBundleId && tempBundleId !== '') {
+                bundleId = tempBundleId;
+                bundleOptionId = $selectedOption.attr('data-bundle-option-id');
+                optionLabel = $selectedOption.text();
+                price = parseFloat($selectedOption.attr('data-price'));
+                return false; // Break the loop
+            }
+        });
+
         var bundleName = optionLabel;
-        var price = parseFloat(selectedOption.attr('data-price'));
 
         // Get quantity
-        var quantity = parseInt($('#quantity_' + itemId + ' .quantity-select').val());
+        var quantity = parseInt($productCard.find('.quantity-select').val());
 
         // Check if bundleId is missing (no option selected)
         if (!bundleId) {

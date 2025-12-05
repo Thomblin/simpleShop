@@ -14,7 +14,7 @@ describe('SimpleShop Public API - Additional Functions', () => {
         SimpleShop = require('../../js/main.js');
         SimpleShop.clearBasket();
         jest.clearAllMocks();
-        
+
         // Set up shopConfig
         if (typeof shopConfig !== 'undefined') {
             shopConfig.translations.times = 'times';
@@ -44,7 +44,7 @@ describe('SimpleShop Public API - Additional Functions', () => {
     describe('preview', () => {
         test('should call ApiService.post with correct parameters', () => {
             SimpleShop.preview();
-            
+
             expect(SimpleShop.ApiService.post).toHaveBeenCalledWith(
                 'ajax.php',
                 expect.any(String),
@@ -54,24 +54,24 @@ describe('SimpleShop Public API - Additional Functions', () => {
         });
 
         test('should handle error response', () => {
-            const alertSpy = jest.spyOn(window, 'alert').mockImplementation(() => {});
-            
+            const alertSpy = jest.spyOn(window, 'alert').mockImplementation(() => { });
+
             SimpleShop.preview();
-            
+
             // Simulate error response
             const callback = SimpleShop.ApiService.post.mock.calls[0][2];
             callback({ error: 'Test error' });
-            
+
             expect(alertSpy).toHaveBeenCalledWith('Test error');
             alertSpy.mockRestore();
         });
 
         test('should display mail preview on success', () => {
             SimpleShop.preview();
-            
+
             const callback = SimpleShop.ApiService.post.mock.calls[0][2];
             callback({ mail: 'Test mail content', order: false });
-            
+
             expect(SimpleShop.DomService.html).toHaveBeenCalledWith('#mail_text', '<pre>Test mail content</pre>');
             expect(SimpleShop.DomService.hide).toHaveBeenCalledWith('#main');
             expect(SimpleShop.DomService.show).toHaveBeenCalledWith('#mail');
@@ -79,20 +79,20 @@ describe('SimpleShop Public API - Additional Functions', () => {
 
         test('should show order button when order is true', () => {
             SimpleShop.preview();
-            
+
             const callback = SimpleShop.ApiService.post.mock.calls[0][2];
             callback({ mail: 'Test mail', order: true });
-            
+
             expect(SimpleShop.DomService.hide).toHaveBeenCalledWith('#order_hint');
             expect(SimpleShop.DomService.show).toHaveBeenCalledWith('#order');
         });
 
         test('should show order hint when order is false', () => {
             SimpleShop.preview();
-            
+
             const callback = SimpleShop.ApiService.post.mock.calls[0][2];
             callback({ mail: 'Test mail', order: false });
-            
+
             expect(SimpleShop.DomService.hide).toHaveBeenCalledWith('#order');
             expect(SimpleShop.DomService.show).toHaveBeenCalledWith('#order_hint');
         });
@@ -101,7 +101,7 @@ describe('SimpleShop Public API - Additional Functions', () => {
     describe('back', () => {
         test('should hide mail and show main', () => {
             SimpleShop.back();
-            
+
             expect(SimpleShop.DomService.hide).toHaveBeenCalledWith('#mail');
             expect(SimpleShop.DomService.show).toHaveBeenCalledWith('#main');
         });
@@ -110,7 +110,7 @@ describe('SimpleShop Public API - Additional Functions', () => {
     describe('send', () => {
         test('should call ApiService.post with mail parameter', () => {
             SimpleShop.send();
-            
+
             expect(SimpleShop.ApiService.post).toHaveBeenCalledWith(
                 'ajax.php?mail=1',
                 expect.any(String),
@@ -120,23 +120,23 @@ describe('SimpleShop Public API - Additional Functions', () => {
         });
 
         test('should handle error response', () => {
-            const alertSpy = jest.spyOn(window, 'alert').mockImplementation(() => {});
-            
+            const alertSpy = jest.spyOn(window, 'alert').mockImplementation(() => { });
+
             SimpleShop.send();
-            
+
             const callback = SimpleShop.ApiService.post.mock.calls[0][2];
             callback({ error: 'Send error' });
-            
+
             expect(alertSpy).toHaveBeenCalledWith('Send error');
             alertSpy.mockRestore();
         });
 
         test('should hide mail and show confirm on success', () => {
             SimpleShop.send();
-            
+
             const callback = SimpleShop.ApiService.post.mock.calls[0][2];
             callback({ success: true });
-            
+
             expect(SimpleShop.DomService.hide).toHaveBeenCalledWith('#mail');
             expect(SimpleShop.DomService.show).toHaveBeenCalledWith('#confirm');
         });
@@ -152,9 +152,9 @@ describe('SimpleShop Public API - Additional Functions', () => {
                     attr: jest.fn().mockReturnValue('bundle1')
                 })
             };
-            
+
             SimpleShop.handleOptionChange(mockSelect);
-            
+
             expect(handleChangeSpy).toHaveBeenCalledWith(mockSelect);
             handleChangeSpy.mockRestore();
         });
@@ -163,7 +163,7 @@ describe('SimpleShop Public API - Additional Functions', () => {
     describe('updateInventoryDisplay', () => {
         test('should update inventory display', () => {
             SimpleShop.updateInventoryDisplay('item1', 5);
-            
+
             expect(SimpleShop.DomService.html).toHaveBeenCalledWith('#inventory_display_item1', 'Inventory: 5');
         });
     });
@@ -171,7 +171,7 @@ describe('SimpleShop Public API - Additional Functions', () => {
     describe('calculateTotalWithPorto', () => {
         test('should call ApiService.post with price_only parameter', () => {
             SimpleShop.calculateTotalWithPorto();
-            
+
             expect(SimpleShop.ApiService.post).toHaveBeenCalledWith(
                 'ajax.php?price_only=1',
                 expect.any(String),
@@ -182,10 +182,10 @@ describe('SimpleShop Public API - Additional Functions', () => {
 
         test('should update porto and total on response', () => {
             SimpleShop.calculateTotalWithPorto();
-            
+
             const callback = SimpleShop.ApiService.post.mock.calls[0][2];
             callback({ porto: '5,00 €', price: '100,00 €' });
-            
+
             expect(SimpleShop.DomService.html).toHaveBeenCalledWith('#porto', '5,00 €');
             expect(SimpleShop.DomService.html).toHaveBeenCalledWith('#total', '100,00 €');
         });
@@ -197,22 +197,20 @@ describe('SimpleShop Public API - Additional Functions', () => {
             const mockElement = {
                 fadeIn: jest.fn(),
                 fadeOut: jest.fn(),
-                html: jest.fn(),
-                css: jest.fn()
+                html: jest.fn()
             };
             SimpleShop.DomService.get = jest.fn().mockReturnValue(mockElement);
-            
+
             jest.useFakeTimers();
             SimpleShop.showSuccessMessage('item1', false);
-            
+
             expect(SimpleShop.DomService.get).toHaveBeenCalledWith('#success_item1');
-            expect(mockElement.html).toHaveBeenCalledWith('✓ Added!');
-            expect(mockElement.css).toHaveBeenCalledWith('color', '#008800');
+            expect(mockElement.html).toHaveBeenCalledWith('✓ <span class="success-text">Added!</span>');
             expect(mockElement.fadeIn).toHaveBeenCalledWith(200);
-            
+
             jest.advanceTimersByTime(1000);
             expect(mockElement.fadeOut).toHaveBeenCalledWith(1000);
-            
+
             jest.useRealTimers();
         });
 
@@ -220,24 +218,22 @@ describe('SimpleShop Public API - Additional Functions', () => {
             const mockElement = {
                 fadeIn: jest.fn(),
                 fadeOut: jest.fn(),
-                html: jest.fn(),
-                css: jest.fn()
+                html: jest.fn()
             };
             SimpleShop.DomService.get = jest.fn().mockReturnValue(mockElement);
-            
+
             jest.useFakeTimers();
             SimpleShop.showSuccessMessage('item1', true);
-            
-            expect(mockElement.html).toHaveBeenCalledWith('✓ Updated!');
-            expect(mockElement.css).toHaveBeenCalledWith('color', '#0000ff');
-            
+
+            expect(mockElement.html).toHaveBeenCalledWith('✓ <span class="success-text">Updated!</span>');
+
             jest.useRealTimers();
         });
 
         test('should not fail if element does not have fade methods', () => {
             const mockElement = {};
             SimpleShop.DomService.get = jest.fn().mockReturnValue(mockElement);
-            
+
             expect(() => {
                 SimpleShop.showSuccessMessage('item1', false);
             }).not.toThrow();
@@ -245,7 +241,7 @@ describe('SimpleShop Public API - Additional Functions', () => {
 
         test('should not fail if element is null', () => {
             SimpleShop.DomService.get = jest.fn().mockReturnValue(null);
-            
+
             expect(() => {
                 SimpleShop.showSuccessMessage('item1');
             }).not.toThrow();
@@ -263,7 +259,7 @@ describe('SimpleShop Public API - Additional Functions', () => {
             const mockRemoveElement = {
                 remove: jest.fn()
             };
-            
+
             let callCount = 0;
             $.mockImplementation((selector) => {
                 callCount++;
@@ -275,18 +271,18 @@ describe('SimpleShop Public API - Additional Functions', () => {
                 }
                 return mockInputElement;
             });
-            
+
             // Spy on FormService.generateBasketFields
             const generateBasketFieldsSpy = jest.spyOn(SimpleShop.FormService, 'generateBasketFields');
-            
+
             SimpleShop.addToBasket('item1', 'Item 1', 'bundle1', 'Bundle 1', '', '', 1, 10);
             jest.clearAllMocks();
-            
+
             SimpleShop.updateBasketDisplay();
-            
+
             // BasketDisplay.render is called internally, verify FormService is called
             expect(generateBasketFieldsSpy).toHaveBeenCalled();
-            
+
             generateBasketFieldsSpy.mockRestore();
         });
     });
@@ -302,25 +298,25 @@ describe('SimpleShop Public API - Additional Functions', () => {
         test('should update basket total display and call calculateTotalWithPorto', () => {
             SimpleShop.addToBasket('item1', 'Item 1', 'bundle1', 'Bundle 1', '', '', 2, 10);
             SimpleShop.addToBasket('item2', 'Item 2', 'bundle2', 'Bundle 2', '', '', 3, 15);
-            
+
             // Spy on calculateTotalWithPorto
             const calculateTotalWithPortoSpy = jest.spyOn(SimpleShop, 'calculateTotalWithPorto');
-            
+
             SimpleShop.updateBasketTotal();
-            
+
             // Should update basket total display
             expect(SimpleShop.DomService.html).toHaveBeenCalledWith('#basket_total', expect.stringContaining('65'));
             // Should call calculateTotalWithPorto
             expect(calculateTotalWithPortoSpy).toHaveBeenCalled();
-            
+
             calculateTotalWithPortoSpy.mockRestore();
         });
 
         test('should display 0 for empty basket', () => {
             SimpleShop.clearBasket();
-            
+
             SimpleShop.updateBasketTotal();
-            
+
             expect(SimpleShop.DomService.html).toHaveBeenCalledWith('#basket_total', expect.stringContaining('0'));
         });
 
@@ -329,11 +325,11 @@ describe('SimpleShop Public API - Additional Functions', () => {
             if (typeof shopConfig !== 'undefined') {
                 shopConfig.currency = '€';
             }
-            
+
             SimpleShop.addToBasket('item1', 'Item 1', 'bundle1', 'Bundle 1', '', '', 1, 10.50);
-            
+
             SimpleShop.updateBasketTotal();
-            
+
             // Should format with currency symbol (formatCurrency adds space + currency)
             const htmlCall = SimpleShop.DomService.html.mock.calls.find(call => call[0] === '#basket_total');
             expect(htmlCall).toBeDefined();

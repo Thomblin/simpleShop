@@ -12,7 +12,7 @@ describe('BasketDisplay Edge Cases', () => {
         SimpleShop = require('../../js/main.js');
         SimpleShop.clearBasket();
         jest.clearAllMocks();
-        
+
         // Set up shopConfig
         if (typeof shopConfig !== 'undefined') {
             shopConfig.translations.times = 'times';
@@ -31,62 +31,28 @@ describe('BasketDisplay Edge Cases', () => {
         test('should hide basket display when basket is empty', () => {
             jest.clearAllMocks();
             SimpleShop.BasketDisplay.render();
-            
+
             expect(SimpleShop.DomService.hide).toHaveBeenCalledWith('#basket_display');
             expect(SimpleShop.DomService.html).not.toHaveBeenCalledWith('#basket_items', expect.any(String));
         });
     });
 
     describe('render with items', () => {
-        test('should show basket and set HTML when basket has items', () => {
+        test('should show basket and total section when basket has items', () => {
             SimpleShop.BasketLogic.addItem('item1', 'Item 1', 'bundle1', 'Bundle 1', '', '', 2, 10);
-            
-            const mockBasket = {
-                stop: jest.fn().mockReturnThis(),
-                css: jest.fn().mockReturnThis(),
-                animate: jest.fn().mockReturnThis()
-            };
-            SimpleShop.DomService.get = jest.fn((selector) => {
-                if (selector === '#basket_display') {
-                    return mockBasket;
-                }
-                return null;
-            });
-            
+
             SimpleShop.BasketDisplay.render();
-            
+
             expect(SimpleShop.DomService.html).toHaveBeenCalledWith('#basket_items', expect.stringContaining('Item 1'));
             expect(SimpleShop.DomService.show).toHaveBeenCalledWith('#basket_display');
+            expect(SimpleShop.DomService.show).toHaveBeenCalledWith('.total-section');
         });
 
-        test('should animate basket highlight', () => {
-            SimpleShop.BasketLogic.addItem('item1', 'Item 1', 'bundle1', 'Bundle 1', '', '', 1, 10);
-            
-            const mockBasket = {
-                stop: jest.fn().mockReturnThis(),
-                css: jest.fn().mockReturnThis(),
-                animate: jest.fn().mockReturnThis()
-            };
-            SimpleShop.DomService.get = jest.fn().mockReturnValue(mockBasket);
-            
+        test('should hide total section when basket is empty', () => {
             SimpleShop.BasketDisplay.render();
-            
-            expect(mockBasket.stop).toHaveBeenCalled();
-            expect(mockBasket.css).toHaveBeenCalledWith('background-color', '#e8f5e9');
-            expect(mockBasket.animate).toHaveBeenCalledWith({ backgroundColor: '#ddd' }, 800);
-        });
 
-        test('should handle missing animation methods gracefully', () => {
-            SimpleShop.BasketLogic.addItem('item1', 'Item 1', 'bundle1', 'Bundle 1', '', '', 1, 10);
-            
-            const mockBasket = {
-                // Missing stop, css, animate methods
-            };
-            SimpleShop.DomService.get = jest.fn().mockReturnValue(mockBasket);
-            
-            expect(() => {
-                SimpleShop.BasketDisplay.render();
-            }).not.toThrow();
+            expect(SimpleShop.DomService.hide).toHaveBeenCalledWith('#basket_display');
+            expect(SimpleShop.DomService.hide).toHaveBeenCalledWith('.total-section');
         });
     });
 
@@ -106,7 +72,7 @@ describe('BasketDisplay Edge Cases', () => {
             };
 
             const html = SimpleShop.BasketDisplay.generateItemHtml(item);
-            
+
             expect(html).toContain('Test Item');
             expect(html).toContain('Test Bundle');
             expect(html).not.toContain('Test Bundle - '); // Should not have extra dash
@@ -127,7 +93,7 @@ describe('BasketDisplay Edge Cases', () => {
             };
 
             const html = SimpleShop.BasketDisplay.generateItemHtml(item);
-            
+
             expect(html).toContain('0');
             expect(html).toContain('0,00');
         });
@@ -147,7 +113,7 @@ describe('BasketDisplay Edge Cases', () => {
             };
 
             const html = SimpleShop.BasketDisplay.generateItemHtml(item);
-            
+
             expect(html).toContain('9999,99');
         });
     });
