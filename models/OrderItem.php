@@ -69,15 +69,15 @@ class OrderItem
      * @param bool $outOfStock
      */
     public function __construct(
-        $itemId,
-        $itemName,
-        $bundleId,
-        $bundleName,
-        $amount,
-        $price,
-        $bundleOptionId = null,
-        $selectedOptions = [],
-        $outOfStock = false
+        int $itemId,
+        string $itemName,
+        int $bundleId,
+        string $bundleName,
+        int $amount,
+        float $price,
+        ?int $bundleOptionId = null,
+        array $selectedOptions = [],
+        bool $outOfStock = false
     ) {
         $this->itemId = (int)$itemId;
         $this->itemName = $itemName;
@@ -96,7 +96,7 @@ class OrderItem
      *
      * @return array
      */
-    public function toArray()
+    public function toArray(): array
     {
         return [
             'item_id' => $this->itemId,

@@ -15,7 +15,7 @@ class PriceCalculator
      *
      * @param string $currency Currency symbol (default: '€')
      */
-    public function __construct($currency = '€')
+    public function __construct(string $currency = '€')
     {
         $this->currency = $currency;
     }
@@ -27,7 +27,7 @@ class PriceCalculator
      * @param bool $collectionByCustomer Whether customer will collect
      * @return float Shipping cost
      */
-    public function calculatePorto(array $items, $collectionByCustomer = false)
+    public function calculatePorto(array $items, bool $collectionByCustomer = false): float
     {
         if ($collectionByCustomer) {
             return 0.0;
@@ -51,7 +51,7 @@ class PriceCalculator
      * @param float $porto Shipping cost
      * @return PriceResult
      */
-    public function calculateTotal(array $items, $porto)
+    public function calculateTotal(array $items, float $porto): PriceResult
     {
         $subtotal = 0.0;
 
@@ -68,7 +68,7 @@ class PriceCalculator
      * @param float $price
      * @return string Formatted price with currency
      */
-    public function formatPrice($price)
+    public function formatPrice(float $price): string
     {
         return number_format($price, 2, ',', '.') . ' ' . $this->currency;
     }

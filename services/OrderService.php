@@ -34,7 +34,7 @@ class OrderService
      * @param array $shopItems Shop items from Items::getItems()
      * @return Order
      */
-    public function processOrder(array $postData, array $shopItems)
+    public function processOrder(array $postData, array $shopItems): Order
     {
         $orderItems = [];
         $orders = [];
@@ -115,15 +115,15 @@ class OrderService
      * @param float &$porto
      */
     private function processNestedBundleOptions(
-        $postValue,
-        $item,
-        $bundle,
-        $selectedOptionByGroup,
-        &$orderItems,
-        &$orders,
-        &$anyOutOfStock,
-        &$porto
-    ) {
+        array $postValue,
+        array $item,
+        array $bundle,
+        array $selectedOptionByGroup,
+        array &$orderItems,
+        array &$orders,
+        bool &$anyOutOfStock,
+        float &$porto
+    ): void {
         foreach ($postValue as $boId => $rawAmount) {
             $amount = (int)$rawAmount;
 
@@ -176,15 +176,15 @@ class OrderService
      * @param float &$porto
      */
     private function processSimpleBundleAmount(
-        $postValue,
-        $item,
-        $bundle,
-        $selectedOptionByGroup,
-        &$orderItems,
-        &$orders,
-        &$anyOutOfStock,
-        &$porto
-    ) {
+        mixed $postValue,
+        array $item,
+        array $bundle,
+        array $selectedOptionByGroup,
+        array &$orderItems,
+        array &$orders,
+        bool &$anyOutOfStock,
+        float &$porto
+    ): void {
         $amount = (int)$postValue;
 
         $effective = $this->determineEffectiveOptions($bundle, $item, null, $selectedOptionByGroup);
@@ -234,7 +234,7 @@ class OrderService
      * @param array $selectedOptionByGroup
      * @return array
      */
-    private function determineEffectiveOptions($bundle, $item, $bundleOptionId, $selectedOptionByGroup)
+    private function determineEffectiveOptions(array $bundle, array $item, ?int $bundleOptionId, array $selectedOptionByGroup): array
     {
         // All price, min_count, max_count, inventory come from bundle_options only
         // We must find the matching bundle_option from option_groups
@@ -293,7 +293,7 @@ class OrderService
      * @param array $postData
      * @return array
      */
-    private function extractCustomerInfo($postData)
+    private function extractCustomerInfo(array $postData): array
     {
         return [
             'name' => isset($postData['name']) ? $postData['name'] : '',
@@ -311,7 +311,7 @@ class OrderService
      * @param array $requiredFields
      * @return array Array of validation errors
      */
-    public function validateCustomerData($customerData, $requiredFields)
+    public function validateCustomerData(array $customerData, array $requiredFields): array
     {
         $errors = [];
 

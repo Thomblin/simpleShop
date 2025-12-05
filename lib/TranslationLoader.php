@@ -8,9 +8,9 @@ class TranslationLoader
     private $translationsPath;
 
     /**
-     * @param string $translationsPath Path to translations directory
+     * @param string|null $translationsPath Path to translations directory
      */
-    public function __construct($translationsPath = null)
+    public function __construct(?string $translationsPath = null)
     {
         $this->translationsPath = $translationsPath ?: __DIR__ . '/../translations/';
     }
@@ -22,7 +22,7 @@ class TranslationLoader
      * @return array Translation key-value pairs
      * @throws RuntimeException If translation file doesn't exist
      */
-    public function load($language)
+    public function load(string $language): array
     {
         $filePath = $this->translationsPath . $language . '.php';
 

@@ -5,7 +5,7 @@ if (!function_exists('json_encode')) {
      * @param bool|array $a
      * @return string
      */
-    function json_encode($a = false)
+    function json_encode(bool|array $a = false): string
     {
         if (is_null($a))
             return 'null';
@@ -278,7 +278,7 @@ if (!isset($_GET['price_only'])) {
     }
 }
 
-function mail_utf8($to, $from_user, $from_email, $subject = '', $message = '')
+function mail_utf8(string $to, string $from_user, string $from_email, string $subject = '', string $message = ''): bool
 {
     // Use MailService instead of calling mail() directly
     $mailService = new MailService();

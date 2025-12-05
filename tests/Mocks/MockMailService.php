@@ -20,7 +20,7 @@ class MockMailService implements MailServiceInterface
      * @param string $fromName From name
      * @return bool Always returns true (simulated success)
      */
-    public function send($to, $subject, $message, $fromEmail, $fromName)
+    public function send(string $to, string $subject, string $message, string $fromEmail, string $fromName): bool
     {
         // Store the email for testing purposes
         $this->sentEmails[] = [
@@ -45,7 +45,7 @@ class MockMailService implements MailServiceInterface
      * @param string $fromName
      * @return bool Always returns true
      */
-    public function sendToMultiple(array $recipients, $subject, $message, $fromEmail, $fromName)
+    public function sendToMultiple(array $recipients, string $subject, string $message, string $fromEmail, string $fromName): bool
     {
         foreach ($recipients as $recipient) {
             $this->send($recipient, $subject, $message, $fromEmail, $fromName);
@@ -58,7 +58,7 @@ class MockMailService implements MailServiceInterface
      *
      * @return array
      */
-    public function getSentEmails()
+    public function getSentEmails(): array
     {
         return $this->sentEmails;
     }
@@ -66,7 +66,7 @@ class MockMailService implements MailServiceInterface
     /**
      * Clear sent emails (for testing)
      */
-    public function clearSentEmails()
+    public function clearSentEmails(): void
     {
         $this->sentEmails = [];
     }
@@ -76,7 +76,7 @@ class MockMailService implements MailServiceInterface
      *
      * @return array|null
      */
-    public function getLastSentEmail()
+    public function getLastSentEmail(): ?array
     {
         return !empty($this->sentEmails) ? end($this->sentEmails) : null;
     }

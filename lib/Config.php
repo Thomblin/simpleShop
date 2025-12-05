@@ -26,52 +26,52 @@ class Config implements ConfigInterface
     public $language = 'de';
     public $showInventory = true;
 
-    public function getMysqlHost()
+    public function getMysqlHost(): string
     {
         return $this->mysqlHost;
     }
 
-    public function getMysqlUser()
+    public function getMysqlUser(): string
     {
         return $this->mysqlUser;
     }
 
-    public function getMysqlPassword()
+    public function getMysqlPassword(): string
     {
         return $this->mysqlPassword;
     }
 
-    public function getMysqlDatabase()
+    public function getMysqlDatabase(): string
     {
         return $this->mysqlDatabase;
     }
 
-    public function getLanguage()
+    public function getLanguage(): string
     {
         return $this->language;
     }
 
-    public function getShowInventory()
+    public function getShowInventory(): bool
     {
         return $this->showInventory;
     }
 
-    public function getAllowedTextfields()
+    public function getAllowedTextfields(): array
     {
         return $this->allowedTextfields;
     }
 
-    public function getCurrency()
+    public function getCurrency(): string
     {
         return self::CURRENCY;
     }
 
-    public function getMailAddress()
+    public function getMailAddress(): string
     {
         return self::MAIL_ADDRESS;
     }
 
-    public function getMailUser()
+    public function getMailUser(): string
     {
         return self::MAIL_USER;
     }

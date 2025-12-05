@@ -1,6 +1,6 @@
 <?php
 
-spl_autoload_register(function ($className) {
+spl_autoload_register(function (string $className): void {
     // List of directories to search for class files
     $directories = [
         __DIR__ . '/lib/',

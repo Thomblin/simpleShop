@@ -18,57 +18,57 @@ class MockConfig implements ConfigInterface
         'mailUser' => 'Test User'
     ];
 
-    public function __construct($overrides = [])
+    public function __construct(array $overrides = [])
     {
         $this->data = array_merge($this->data, $overrides);
     }
 
-    public function getMysqlHost()
+    public function getMysqlHost(): string
     {
         return $this->data['mysqlHost'];
     }
 
-    public function getMysqlUser()
+    public function getMysqlUser(): string
     {
         return $this->data['mysqlUser'];
     }
 
-    public function getMysqlPassword()
+    public function getMysqlPassword(): string
     {
         return $this->data['mysqlPassword'];
     }
 
-    public function getMysqlDatabase()
+    public function getMysqlDatabase(): string
     {
         return $this->data['mysqlDatabase'];
     }
 
-    public function getLanguage()
+    public function getLanguage(): string
     {
         return $this->data['language'];
     }
 
-    public function getShowInventory()
+    public function getShowInventory(): bool
     {
         return $this->data['showInventory'];
     }
 
-    public function getAllowedTextfields()
+    public function getAllowedTextfields(): array
     {
         return $this->data['allowedTextfields'];
     }
 
-    public function getCurrency()
+    public function getCurrency(): string
     {
         return $this->data['currency'];
     }
 
-    public function getMailAddress()
+    public function getMailAddress(): string
     {
         return $this->data['mailAddress'];
     }
 
-    public function getMailUser()
+    public function getMailUser(): string
     {
         return $this->data['mailUser'];
     }

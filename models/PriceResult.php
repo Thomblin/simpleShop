@@ -42,7 +42,7 @@ class PriceResult
      * @param float $porto
      * @param string $currency
      */
-    public function __construct($subtotal, $porto, $currency = '€')
+    public function __construct(float $subtotal, float $porto, string $currency = '€')
     {
         $this->subtotal = (float)$subtotal;
         $this->porto = (float)$porto;
@@ -60,7 +60,7 @@ class PriceResult
      * @param string $currency
      * @return string
      */
-    private function formatPrice($price, $currency)
+    private function formatPrice(float $price, string $currency): string
     {
         return number_format($price, 2, ',', '.') . ' ' . $currency;
     }
@@ -70,7 +70,7 @@ class PriceResult
      *
      * @return array
      */
-    public function toArray()
+    public function toArray(): array
     {
         return [
             'subtotal' => $this->subtotal,

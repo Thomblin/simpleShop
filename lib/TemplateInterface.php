@@ -9,7 +9,7 @@ interface TemplateInterface
      * @param mixed $value
      * @return void
      */
-    public function add($key, $value);
+    public function add(string $key, mixed $value): void;
 
     /**
      * Parse and render a template file
@@ -18,5 +18,5 @@ interface TemplateInterface
      * @param bool $print Whether to print directly or return as string
      * @return string Rendered template (empty if $print is true)
      */
-    public function parse($file, $print = true);
+    public function parse(string $file, bool $print = true): string;
 }

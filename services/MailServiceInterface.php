@@ -12,5 +12,5 @@ interface MailServiceInterface
      * @param string $fromName From name
      * @return bool Success status
      */
-    public function send($to, $subject, $message, $fromEmail, $fromName);
+    public function send(string $to, string $subject, string $message, string $fromEmail, string $fromName): bool;
 }

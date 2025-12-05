@@ -48,7 +48,7 @@ class Order
      * @param float $porto
      * @param bool $collectionByCustomer
      */
-    public function __construct(array $items, array $customer, $porto, $collectionByCustomer = false)
+    public function __construct(array $items, array $customer, float $porto, bool $collectionByCustomer = false)
     {
         $this->items = $items;
         $this->customer = $customer;
@@ -74,7 +74,7 @@ class Order
      *
      * @return array Array of order data for Items::orderItem()
      */
-    public function getOrdersForPersistence()
+    public function getOrdersForPersistence(): array
     {
         $orders = [];
         foreach ($this->items as $item) {
@@ -92,7 +92,7 @@ class Order
      *
      * @return array
      */
-    public function getItemsArray()
+    public function getItemsArray(): array
     {
         return array_map(function ($item) {
             return $item->toArray();

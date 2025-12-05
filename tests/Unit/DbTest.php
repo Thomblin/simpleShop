@@ -115,8 +115,8 @@ class DbTest extends TestCase
     public function testConstructorWithInvalidArgument()
     {
         // Test exception path when invalid config is passed
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Constructor requires mysqli or ConfigInterface');
+        // With type hints, PHP throws TypeError instead of InvalidArgumentException
+        $this->expectException(TypeError::class);
 
         new Db('invalid');
     }

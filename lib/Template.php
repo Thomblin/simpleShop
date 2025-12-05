@@ -15,9 +15,9 @@ class Template implements TemplateInterface
     /**
      * Template constructor.
      *
-     * @param string $basePath Base path for template files (defaults to project root)
+     * @param string|null $basePath Base path for template files (defaults to project root)
      */
-    public function __construct($basePath = null)
+    public function __construct(?string $basePath = null)
     {
         $this->basePath = $basePath ?: __DIR__ . '/../';
     }
@@ -29,7 +29,7 @@ class Template implements TemplateInterface
      * @param mixed $value
      * @return void
      */
-    public function add($key, $value)
+    public function add(string $key, mixed $value): void
     {
         $this->data[$key] = $value;
     }
@@ -41,7 +41,7 @@ class Template implements TemplateInterface
      * @return string Validated absolute path
      * @throws InvalidArgumentException if file is invalid
      */
-    private function validateFilePath($file)
+    private function validateFilePath(string $file): string
     {
         // Convert to absolute path if relative
         if (!is_file($file)) {
@@ -106,7 +106,7 @@ class Template implements TemplateInterface
      * @return string Rendered template (empty if $print is true)
      * @throws InvalidArgumentException if template file is invalid
      */
-    public function parse($file, $print = true)
+    public function parse(string $file, bool $print = true): string
     {
         $result = '';
 
@@ -135,7 +135,7 @@ class Template implements TemplateInterface
      *
      * @return array
      */
-    public function getData()
+    public function getData(): array
     {
         return $this->data;
     }

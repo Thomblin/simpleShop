@@ -20,7 +20,7 @@ class MailService implements MailServiceInterface
      * @param string $fromName From name
      * @return bool Success status
      */
-    public function send($to, $subject, $message, $fromEmail, $fromName)
+    public function send(string $to, string $subject, string $message, string $fromEmail, string $fromName): bool
     {
         // In test environment, don't actually send emails but track them
         if (defined('PHPUNIT_TEST') && PHPUNIT_TEST) {
@@ -60,7 +60,7 @@ class MailService implements MailServiceInterface
      * @param string $fromName
      * @return bool True if all emails sent successfully
      */
-    public function sendToMultiple(array $recipients, $subject, $message, $fromEmail, $fromName)
+    public function sendToMultiple(array $recipients, string $subject, string $message, string $fromEmail, string $fromName): bool
     {
         $allSuccess = true;
 
@@ -78,7 +78,7 @@ class MailService implements MailServiceInterface
      *
      * @return array
      */
-    public static function getSentEmails()
+    public static function getSentEmails(): array
     {
         return self::$sentEmails;
     }
@@ -86,7 +86,7 @@ class MailService implements MailServiceInterface
     /**
      * Clear sent emails (for testing only)
      */
-    public static function clearSentEmails()
+    public static function clearSentEmails(): void
     {
         self::$sentEmails = [];
     }
@@ -96,7 +96,7 @@ class MailService implements MailServiceInterface
      *
      * @return array|null
      */
-    public static function getLastSentEmail()
+    public static function getLastSentEmail(): ?array
     {
         return !empty(self::$sentEmails) ? end(self::$sentEmails) : null;
     }

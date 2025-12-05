@@ -18,7 +18,7 @@ class Translation implements TranslationInterface
      * @param TranslationLoader $loader
      * @param string $language
      */
-    public function __construct(TranslationLoader $loader, $language)
+    public function __construct(TranslationLoader $loader, string $language)
     {
         $this->translations = $loader->load($language);
     }
@@ -29,7 +29,7 @@ class Translation implements TranslationInterface
      * @param ConfigInterface $config
      * @return Translation
      */
-    public static function createFromConfig(ConfigInterface $config)
+    public static function createFromConfig(ConfigInterface $config): self
     {
         $loader = new TranslationLoader();
         return new self($loader, $config->getLanguage());
@@ -41,7 +41,7 @@ class Translation implements TranslationInterface
      * @param string $key
      * @return string
      */
-    public function translate($key)
+    public function translate(string $key): string
     {
         return isset($this->translations[$key])
             ? $this->translations[$key]
@@ -54,7 +54,7 @@ class Translation implements TranslationInterface
      * @param Translation $instance
      * @return void
      */
-    public static function setInstance(Translation $instance)
+    public static function setInstance(Translation $instance): void
     {
         self::$instance = $instance;
     }
@@ -65,7 +65,7 @@ class Translation implements TranslationInterface
      * @return Translation
      * @throws RuntimeException if not initialized
      */
-    public static function getInstance()
+    public static function getInstance(): self
     {
         if (self::$instance === null) {
             throw new RuntimeException('Translation not initialized. Call Translation::setInstance() first.');
@@ -81,7 +81,7 @@ class Translation implements TranslationInterface
  * @return string
  */
 if (!function_exists('t')) {
-    function t($key)
+    function t(string $key): string
     {
         return Translation::getInstance()->translate($key);
     }

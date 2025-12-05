@@ -15,7 +15,7 @@ class Items
         $this->db = $db;
     }
 
-    public function getItems()
+    public function getItems(): array
     {
         $items = [];
 
@@ -46,7 +46,7 @@ class Items
     /**
      * @return array
      */
-    private function loadItems()
+    private function loadItems(): array
     {
         return $this->db->fetchAll("SELECT * FROM items");
     }
@@ -54,7 +54,7 @@ class Items
     /**
      * @return array
      */
-    private function loadBundles()
+    private function loadBundles(): array
     {
         // Load bundles - note: bundles no longer have price, min_count, max_count, inventory
         // These fields are now only in bundle_options
@@ -66,7 +66,7 @@ class Items
      *
      * @return array ['bundleOptions' => array]
      */
-    private function loadInventoryData()
+    private function loadInventoryData(): array
     {
         $bundleOptionInventories = [];
         foreach ($this->db->fetchAll("SELECT bundle_option_id, bundle_id, inventory FROM bundle_options") as $row) {
@@ -88,7 +88,7 @@ class Items
      * @param array $bundleOptionInventories
      * @return bool True if all orders can be fulfilled
      */
-    private function validateOrderAvailability(array $orders, array $bundleOptionInventories)
+    private function validateOrderAvailability(array $orders, array $bundleOptionInventories): bool
     {
         foreach ($orders as $order) {
             $amount = (int) $order['amount'];
@@ -113,7 +113,7 @@ class Items
      * @param array $bundleOptionInventories
      * @return void
      */
-    private function executeInventoryUpdates(array $orders, array $bundleOptionInventories)
+    private function executeInventoryUpdates(array $orders, array $bundleOptionInventories): void
     {
         foreach ($orders as $order) {
             $amount = (int) $order['amount'];
@@ -135,7 +135,7 @@ class Items
      *
      * @return bool
      */
-    public function orderItem(array $orders)
+    public function orderItem(array $orders): bool
     {
         // Use transactions instead of table locks for better testability
         $this->db->beginTransaction();
@@ -171,7 +171,7 @@ class Items
      * @param array $orders
      * @return array Consolidated orders
      */
-    private function consolidateOrders(array $orders)
+    private function consolidateOrders(array $orders): array
     {
         $consolidated = [];
 
@@ -205,7 +205,7 @@ class Items
      * Load all options organized by item and option group
      * @return array
      */
-    private function loadItemOptions()
+    private function loadItemOptions(): array
     {
         $result = [];
 
@@ -274,7 +274,7 @@ class Items
      * @param int $bundleId
      * @return array
      */
-    public function getBundleOptionsForBundle($bundleId)
+    public function getBundleOptionsForBundle(int $bundleId): array
     {
         return $this->db->fetchAll(
             "SELECT bundle_option_id, bundle_id, option_id, price, min_count, max_count, inventory 

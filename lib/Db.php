@@ -8,9 +8,9 @@ class Db implements DatabaseInterface
     private $db;
 
     /**
-     * @param Config|mysqli $config
+     * @param ConfigInterface|mysqli $config
      */
-    public function __construct($config)
+    public function __construct(ConfigInterface|mysqli $config)
     {
         if ($config instanceof mysqli) {
             $this->db = $config;
@@ -42,7 +42,7 @@ class Db implements DatabaseInterface
      * @param array $params
      * @return array
      */
-    public function fetchAll($query, $params = [])
+    public function fetchAll(string $query, array $params = []): array
     {
         if (empty($params)) {
             $result = [];
@@ -101,7 +101,7 @@ class Db implements DatabaseInterface
      * @param array $params
      * @return bool
      */
-    public function execute($query, $params = [])
+    public function execute(string $query, array $params = []): bool
     {
         if (empty($params)) {
             return $this->db->query($query);
@@ -143,7 +143,7 @@ class Db implements DatabaseInterface
     /**
      * @return bool
      */
-    public function beginTransaction()
+    public function beginTransaction(): bool
     {
         return $this->db->begin_transaction();
     }
@@ -151,7 +151,7 @@ class Db implements DatabaseInterface
     /**
      * @return bool
      */
-    public function commit()
+    public function commit(): bool
     {
         return $this->db->commit();
     }
@@ -159,7 +159,7 @@ class Db implements DatabaseInterface
     /**
      * @return bool
      */
-    public function rollback()
+    public function rollback(): bool
     {
         return $this->db->rollback();
     }
@@ -167,7 +167,7 @@ class Db implements DatabaseInterface
     /**
      * @return int
      */
-    public function lastInsertId()
+    public function lastInsertId(): int
     {
         return $this->db->insert_id;
     }
