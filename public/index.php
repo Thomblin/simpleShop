@@ -26,7 +26,7 @@ Translation::setInstance($translation);
     <link rel="apple-touch-icon" href="apple-touch-icon.svg" />
     <meta name="theme-color" content="#880000" />
     <link rel="stylesheet" href="css/style.css" />
-    <script src="http://code.jquery.com/jquery-1.4.2.min.js"></script>
+    <script src="js/jquery-1.4.2.min.js"></script>
     <script type="text/javascript">
         // Configuration passed from PHP - must be defined before main.js loads
         var shopConfig = {
@@ -61,7 +61,7 @@ Translation::setInstance($translation);
     <form id="ajax_form">
         <header class="site-header">
             <div class="container">
-                <a href="../index.php" class="logo">
+                <a href="/" class="logo">
                     <img src="images/logo.svg" alt="<?php echo t('site.title') ?>" />
                     <h1><?php echo t('site.title') ?></h1>
                 </a>
@@ -277,7 +277,7 @@ Translation::setInstance($translation);
             <div class="container">
                 <p>
                     <a href="" target="_top"><?php echo t('site.hints_imprint') ?></a> &middot;
-                    <?php echo t('form.developed_by') ?> <a href="http://sebastian-detert.de">Seeb</a> &middot;
+                    <?php echo t('form.developed_by') ?> <a href="https://github.com/Thomblin/simpleShop">Seeb</a> &middot;
                     <?php echo t('form.designed_by') ?> Wozilla
                 </p>
             </div>
