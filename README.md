@@ -29,9 +29,9 @@ A lightweight, self-hosted e‑commerce shop for small businesses and side proje
      - `docker compose up -d shop_mysql`
    - From the project root, import the schema and/or sample data:
      - Import `migrate.sql` into the main shop database:
-       - `docker compose exec -T shop_mysql sh -c "mysql -uuser -puser shop < /var/lib/mysql/migrate.sql"`
+       - `docker compose exec -T shop_mysql sh -c "mysql -uuser -puser shop" < migrate.sql`
      - Or import the demo data (e.g. `example_seed_shop.sql` or `example_seed_langwacken.sql`):
-       - `docker compose exec -T shop_mysql sh -c "mysql -uuser -puser shop < /var/lib/mysql/example_seed_shop.sql"`
+       - `docker compose exec -T shop_mysql sh -c "mysql -uuser -puser shop" < example_seed_shop.sql`
 
 3. Configure the application
    - Copy `config/config.php.skeleton` to `config/config.php`:
